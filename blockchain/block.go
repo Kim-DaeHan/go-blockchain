@@ -1,10 +1,5 @@
 package blockchain
 
-import (
-	"bytes"
-	"crypto/sha256"
-)
-
 // 블록에 대한 포인터 배열
 type BlockChain struct {
 	Blocks []*Block
@@ -14,20 +9,19 @@ type Block struct {
 	Hash     []byte
 	Data     []byte
 	PrevHash []byte
-}
-
-func (b *Block) DeriveHash() {
-	// data와 이전 해시랑 빈 바이트 조각과 결합한 info를 해싱
-	info := bytes.Join([][]byte{b.Data, b.PrevHash}, []byte{})
-	hash := sha256.Sum256(info)
-	b.Hash = hash[:]
+	Nonce    int
 }
 
 func CreateBlock(data string, prevHash []byte) *Block {
 	// 블록을 생성하고 블록에 대한 포인터를 출력
 	// 블록 생성자를 사용하여 새 블록을 생성
-	block := &Block{[]byte{}, []byte(data), prevHash}
-	block.DeriveHash()
+	block := &Block{[]byte{}, []byte(data), prevHash, 0}
+	pow := NewProof(block)
+	nonce, hash := pow.Run()
+
+	block.Hash = hash[:]
+	block.Nonce = nonce
+
 	return block
 }
 
