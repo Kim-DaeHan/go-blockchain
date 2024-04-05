@@ -2,7 +2,7 @@ module github.com/Kim-DaeHan/go-blockchain
 
 go 1.22.1
 
-require github.com/dgraph-io/badger v1.6.2
+require github.com/dgraph-io/badger v1.5.4
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect

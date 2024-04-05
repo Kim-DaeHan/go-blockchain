@@ -23,7 +23,7 @@ type BlockChainIterator struct {
 func InitBlockChain() *BlockChain {
 	var lastHash []byte
 
-	opts := badger.DefaultOptions(dbPath)
+	opts := badger.DefaultOptions
 	opts.Dir = dbPath
 	opts.ValueDir = dbPath
 
@@ -45,13 +45,7 @@ func InitBlockChain() *BlockChain {
 		} else {
 			item, err := txn.Get([]byte("lh"))
 			Handle(err)
-			// lastHash, err = item.Value()
-			var lastHashValue []byte
-			err = item.Value(func(val []byte) error {
-				lastHashValue = append([]byte{}, val...)
-				return nil
-			})
-			lastHash = lastHashValue
+			lastHash, err = item.Value()
 			return err
 		}
 	})
@@ -68,13 +62,7 @@ func (chain *BlockChain) AddBlock(data string) {
 	err := chain.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("lh"))
 		Handle(err)
-		// lastHash, err = item.Value()
-		var lastHashValue []byte
-		err = item.Value(func(val []byte) error {
-			lastHashValue = append([]byte{}, val...)
-			return nil
-		})
-		lastHash = lastHashValue
+		lastHash, err = item.Value()
 
 		return err
 	})
@@ -102,22 +90,11 @@ func (chain *BlockChain) Iterator() *BlockChainIterator {
 
 func (iter *BlockChainIterator) Next() *Block {
 	var block *Block
-	var encodedBlock []byte
 
 	err := iter.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(iter.CurrentHash)
 		Handle(err)
-		// encodedBlock, err := item.Value()
-		var encodedBlocValue []byte
-		err = item.Value(func(val []byte) error {
-			encodedBlocValue = append([]byte{}, val...)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-		encodedBlock = encodedBlocValue
-
+		encodedBlock, err := item.Value()
 		block = Deserialize(encodedBlock)
 
 		return err
