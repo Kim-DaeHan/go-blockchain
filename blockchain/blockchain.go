@@ -23,28 +23,39 @@ type BlockChainIterator struct {
 func InitBlockChain() *BlockChain {
 	var lastHash []byte
 
+	// Badger 데이터베이스의 옵션 설정
 	opts := badger.DefaultOptions
 	opts.Dir = dbPath
 	opts.ValueDir = dbPath
 
+	// 데이터베이스 오픈
 	db, err := badger.Open(opts)
 	Handle(err)
 
+	// 데이터베이스 업데이트 함수 실행
 	err = db.Update(func(txn *badger.Txn) error {
+		// lh 키에 해당하는 데이터 조회
 		if _, err := txn.Get([]byte("lh")); err == badger.ErrKeyNotFound {
 			fmt.Println("No existing blockchain found")
+			// 제네시스 블록 생성
 			genesis := Genesis()
 			fmt.Println("Genesis proved")
+
+			// 제네시스 블록 데이터를 데이터베이스에 저장
 			err = txn.Set(genesis.Hash, genesis.Serialize())
 			Handle(err)
 			err = txn.Set([]byte("lh"), genesis.Hash)
 
+			// 마지막 블록 해시 값 업데이트
 			lastHash = genesis.Hash
 
 			return err
 		} else {
+			// 이미 블록체인이 존재하는 경우
 			item, err := txn.Get([]byte("lh"))
 			Handle(err)
+
+			// 마지막 블록의 해시 값 조회
 			lastHash, err = item.Value()
 			return err
 		}
