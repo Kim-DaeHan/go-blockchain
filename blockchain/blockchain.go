@@ -70,6 +70,7 @@ func InitBlockChain() *BlockChain {
 func (chain *BlockChain) AddBlock(data string) {
 	var lastHash []byte
 
+	// 데이터베이스를 읽기 위한 View 함수 실행
 	err := chain.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("lh"))
 		Handle(err)
