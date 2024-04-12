@@ -48,7 +48,7 @@ func (cli *CommandLine) printChain() {
 
 		// 블록의 정보를 출력
 		fmt.Printf("Prev. hash: %x\n", block.PrevHash)
-		fmt.Printf("Data: %s\n", block.Data)
+		fmt.Printf("Data: %s\n", block.Transactions)
 		fmt.Printf("Hash: %x\n", block.Hash)
 
 		// 작업 증명 결과를 출력
