@@ -35,7 +35,9 @@ func (cli *CommandLine) validateArgs() {
 // 체인 내의 블록들을 출력
 func (cli *CommandLine) printChain() {
 	// 반복자를 사용하여 체인을 탐색
-	iter := cli.blockchain.Iterator()
+	chain := blockchain.ContinueBlockChain("")
+	defer chain.Database.Close()
+	iter := chain.Iterator()
 
 	for {
 		// 다음(이전) 블록을 가져옴
@@ -43,7 +45,6 @@ func (cli *CommandLine) printChain() {
 
 		// 블록의 정보를 출력
 		fmt.Printf("Prev. hash: %x\n", block.PrevHash)
-		fmt.Printf("Data: %s\n", block.Transactions)
 		fmt.Printf("Hash: %x\n", block.Hash)
 
 		// 작업 증명 결과를 출력
