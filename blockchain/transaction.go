@@ -17,7 +17,7 @@ type Transaction struct {
 
 type TxOutput struct {
 	Value  int
-	PubKey string // 토큰을 잠금 해제하는데 필요
+	PubKey string
 }
 
 type TxInput struct {
@@ -70,12 +70,6 @@ func NewTransaction(from, to string, amount int, chain *BlockChain) *Transaction
 			input := TxInput{txID, out, from}
 			inputs = append(inputs, input)
 		}
-	}
-
-	outputs = append(outputs, TxOutput{amount, to})
-
-	if acc > amount {
-		outputs = append(outputs, TxOutput{amount, to})
 	}
 
 	outputs = append(outputs, TxOutput{amount, to})
