@@ -25,6 +25,7 @@ type BlockChainIterator struct {
 	Database    *badger.DB
 }
 
+// DB파일 있는지 확인하는 함수
 func DBexists() bool {
 	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
 		return false
@@ -170,33 +171,47 @@ func (iter *BlockChainIterator) Next() *Block {
 }
 
 func (chain *BlockChain) FindUnspentTransactions(address string) []Transaction {
+	// 사용되지 않은 트랜잭션들을 저장할 슬라이스 선언
 	var unspentTxs []Transaction
 
+	// 이미 소비된 트랜잭션 출력(UTXO)들을 저장하는 맵을 초기화
 	spentTXOs := make(map[string][]int)
 
+	// 블록체인의 이터레이터를 생성
 	iter := chain.Iterator()
 
 	for {
+		// 다음 블록 가져옴
 		block := iter.Next()
 
+		// 블록 내의 모든 트랜잭션 순회
 		for _, tx := range block.Transactions {
+			// 트랜잭션 ID를 문자열로 변환
 			txID := hex.EncodeToString(tx.ID)
 
+			// 트랜잭션 출력 순회
 		Outputs:
 			for outIdx, out := range tx.Outputs {
+				// 이미 소비된 UTXO인지 확인
 				if spentTXOs[txID] != nil {
+					// 소비된 UTXO 순회
 					for _, spentOut := range spentTXOs[txID] {
+						// 이미 소비된 UTXO이면 건너뜀
 						if spentOut == outIdx {
 							continue Outputs
 						}
 					}
 				}
+				// UTXO가 주어진 주소로 잠긴 것인지 확인
 				if out.CanBeUnlocked(address) {
+					// 사용되지 않은 트랜잭션에 추가
 					unspentTxs = append(unspentTxs, *tx)
 				}
 			}
+			// 코인베이스 트랜잭션이 아닌 경우, 입력을 확인
 			if !tx.IsCoinbase() {
 				for _, in := range tx.Inputs {
+					// 해당 주소로 잠김 UTXO를 찾고, 이미 소비된 것으로 표시
 					if in.CanUnlock(address) {
 						inTxID := hex.EncodeToString(in.ID)
 						spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Out)
@@ -205,10 +220,12 @@ func (chain *BlockChain) FindUnspentTransactions(address string) []Transaction {
 			}
 		}
 
+		// 이전 블록 없으면 루프 종료
 		if len(block.PrevHash) == 0 {
 			break
 		}
 	}
+	// 사용되지 않은 트랜잭션 슬라이스 반환
 	return unspentTxs
 }
 

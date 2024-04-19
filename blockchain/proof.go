@@ -39,6 +39,7 @@ func NewProof(b *Block) *ProofOfWork {
 	return pow
 }
 
+// 데이터 초기화 하는 함수
 func (pow *ProofOfWork) InitData(nonce int) []byte {
 	data := bytes.Join(
 		[][]byte{
