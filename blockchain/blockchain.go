@@ -170,6 +170,7 @@ func (iter *BlockChainIterator) Next() *Block {
 	return block
 }
 
+// 미사용 트랜잭션 찾는 함수
 func (chain *BlockChain) FindUnspentTransactions(address string) []Transaction {
 	// 사용되지 않은 트랜잭션들을 저장할 슬라이스 선언
 	var unspentTxs []Transaction
@@ -229,12 +230,18 @@ func (chain *BlockChain) FindUnspentTransactions(address string) []Transaction {
 	return unspentTxs
 }
 
+// UTXO 찾는 함수
 func (chain *BlockChain) FindUTXO(address string) []TxOutput {
+	// 새로운 UTXO 목록을 담을 슬라이스 생성
 	var UTXOs []TxOutput
+	// 주어진 주소에 대한 모든 미사용 트랜잭션을 찾음
 	unspentTransactions := chain.FindUnspentTransactions(address)
 
+	// 모든 미사용 트랜잭션에 대한 반복
 	for _, tx := range unspentTransactions {
+		// 각 트랜잭션의 출력에 대해 반복
 		for _, out := range tx.Outputs {
+			// 주어진 주소로 잠긴 출력을 UTXO 목록에 추가
 			if out.CanBeUnlocked(address) {
 				UTXOs = append(UTXOs, out)
 			}
@@ -243,20 +250,31 @@ func (chain *BlockChain) FindUTXO(address string) []TxOutput {
 	return UTXOs
 }
 
+// 사용가능한 출력 찾는 함수
 func (chain *BlockChain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
+	// 사용 가능한 출력을 추적하기 위한 맵 생성
 	unspentOuts := make(map[string][]int)
+	// 주어진 주소에 대한 모든 미사용 트랜잭션을 찾음
 	unspentTxs := chain.FindUnspentTransactions(address)
+	// 누적된 총량 초기화
 	accumulated := 0
 
+	// 모든 미사용 트랜잭션에 대한 반복
 Work:
 	for _, tx := range unspentTxs {
+		// 트랜잭션 ID를 문자열로 변환하여 사용
 		txID := hex.EncodeToString(tx.ID)
 
+		// 각 출력에 대해 반복
 		for outIdx, out := range tx.Outputs {
+			// 주어진 주소로 잠긴 출력을 찾고 누적된 금액이 요청된 금액보다 작을 때
 			if out.CanBeUnlocked(address) && accumulated < amount {
+				// 출력값을 누적된 금액에 추가
 				accumulated += out.Value
+				// 사용 가능한 출력을 맵에 추가
 				unspentOuts[txID] = append(unspentOuts[txID], outIdx)
 
+				// 누적된 금액이 요청된 금액 이상이면 반복 중단
 				if accumulated >= amount {
 					break Work
 				}
