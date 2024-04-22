@@ -16,19 +16,6 @@ type Transaction struct {
 	Outputs []TxOutput
 }
 
-// 트랜잭션의 출력에 대한 정보
-type TxOutput struct {
-	Value  int
-	PubKey string
-}
-
-// 트랜잭션 입력에 대한 정보
-type TxInput struct {
-	ID  []byte
-	Out int
-	Sig string
-}
-
 // 트랜잭션 id 설정
 func (tx *Transaction) SetID() {
 	var encoded bytes.Buffer
@@ -111,13 +98,4 @@ func NewTransaction(from, to string, amount int, chain *BlockChain) *Transaction
 // 트랜잭션이 코인베이스인지 여부 확인
 func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.Inputs) == 1 && len(tx.Inputs[0].ID) == 0 && tx.Inputs[0].Out == -1
-}
-
-// CanUnlock, CanBeUnlocked 트랜잭션 입력 및 출력을 잠그거나 잠금 해제할 수 있는지 확인(서명 or 공개키 사용)
-func (in *TxInput) CanUnlock(data string) bool {
-	return in.Sig == data
-}
-
-func (out *TxOutput) CanBeUnlocked(data string) bool {
-	return out.PubKey == data
 }
