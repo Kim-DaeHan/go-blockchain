@@ -82,6 +82,7 @@ func (ws *Wallets) SaveFile() {
 	}
 
 	err = os.WriteFile(walletFile, content.Bytes(), 0644)
+
 	if err != nil {
 		log.Panic(err)
 	}
