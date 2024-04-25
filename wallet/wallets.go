@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/elliptic"
 	"encoding/gob"
-	"fmt"
 	"log"
 	"os"
 )
@@ -26,7 +25,8 @@ func CreateWallets() (*Wallets, error) {
 
 func (ws *Wallets) AddWallet() string {
 	wallet := MakeWallet()
-	address := fmt.Sprintf("%s", wallet.Address())
+	address := string(wallet.Address())
+	// fmt.Println(address)
 
 	ws.Wallets[address] = wallet
 
