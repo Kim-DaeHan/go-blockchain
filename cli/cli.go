@@ -36,7 +36,9 @@ func (cli *CommandLine) validateArgs() {
 }
 
 func (cli *CommandLine) listAddresses() {
+	// 파일에서 지갑 정보 불러와 변수 생성
 	wallets, _ := wallet.CreateWallets()
+	// Wallets 구조체의 모든 지갑 주소 불러와 변수 생성
 	addresses := wallets.GetAllAddresses()
 
 	for _, address := range addresses {
@@ -45,8 +47,11 @@ func (cli *CommandLine) listAddresses() {
 }
 
 func (cli *CommandLine) createWallet() {
+	// 파일에서 지갑 정보 불러와 변수 생성
 	wallets, _ := wallet.CreateWallets()
+	// 새로운 지갑 생성하고 지갑 주소 생성하여 주소 불러와 변수 생성
 	address := wallets.AddWallet()
+	// 새로 생성된 지갑 정보 파일에 저장
 	wallets.SaveFile()
 
 	fmt.Printf("New address is: %s\n", address)
