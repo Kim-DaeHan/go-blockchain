@@ -1,7 +1,10 @@
 package blockchain
 
 import (
+	"bytes"
+	"crypto/ecdsa"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -171,7 +174,7 @@ func (iter *BlockChainIterator) Next() *Block {
 }
 
 // 미사용 트랜잭션 찾는 함수
-func (chain *BlockChain) FindUnspentTransactions(address string) []Transaction {
+func (chain *BlockChain) FindUnspentTransactions(pubKeyHash []byte) []Transaction {
 	// 사용되지 않은 트랜잭션들을 저장할 슬라이스 선언
 	var unspentTxs []Transaction
 
@@ -204,7 +207,7 @@ func (chain *BlockChain) FindUnspentTransactions(address string) []Transaction {
 					}
 				}
 				// UTXO가 주어진 주소로 잠긴 것인지 확인
-				if out.CanBeUnlocked(address) {
+				if out.IsLockedWithKey(pubKeyHash) {
 					// 사용되지 않은 트랜잭션에 추가
 					unspentTxs = append(unspentTxs, *tx)
 				}
@@ -213,7 +216,7 @@ func (chain *BlockChain) FindUnspentTransactions(address string) []Transaction {
 			if !tx.IsCoinbase() {
 				for _, in := range tx.Inputs {
 					// 해당 주소로 잠김 UTXO를 찾고, 이미 소비된 것으로 표시
-					if in.CanUnlock(address) {
+					if in.UsesKey(pubKeyHash) {
 						inTxID := hex.EncodeToString(in.ID)
 						spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Out)
 					}
@@ -231,18 +234,18 @@ func (chain *BlockChain) FindUnspentTransactions(address string) []Transaction {
 }
 
 // UTXO 찾는 함수
-func (chain *BlockChain) FindUTXO(address string) []TxOutput {
+func (chain *BlockChain) FindUTXO(pubKeyHash []byte) []TxOutput {
 	// 새로운 UTXO 목록을 담을 슬라이스 생성
 	var UTXOs []TxOutput
 	// 주어진 주소에 대한 모든 미사용 트랜잭션을 찾음
-	unspentTransactions := chain.FindUnspentTransactions(address)
+	unspentTransactions := chain.FindUnspentTransactions(pubKeyHash)
 
 	// 모든 미사용 트랜잭션에 대한 반복
 	for _, tx := range unspentTransactions {
 		// 각 트랜잭션의 출력에 대해 반복
 		for _, out := range tx.Outputs {
 			// 주어진 주소로 잠긴 출력을 UTXO 목록에 추가
-			if out.CanBeUnlocked(address) {
+			if out.IsLockedWithKey(pubKeyHash) {
 				UTXOs = append(UTXOs, out)
 			}
 		}
@@ -251,11 +254,11 @@ func (chain *BlockChain) FindUTXO(address string) []TxOutput {
 }
 
 // 사용가능한 출력 찾는 함수
-func (chain *BlockChain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
+func (chain *BlockChain) FindSpendableOutputs(pubKeyHash []byte, amount int) (int, map[string][]int) {
 	// 사용 가능한 출력을 추적하기 위한 맵 생성
 	unspentOuts := make(map[string][]int)
 	// 주어진 주소에 대한 모든 미사용 트랜잭션을 찾음
-	unspentTxs := chain.FindUnspentTransactions(address)
+	unspentTxs := chain.FindUnspentTransactions(pubKeyHash)
 	// 누적된 총량 초기화
 	accumulated := 0
 
@@ -268,7 +271,7 @@ Work:
 		// 각 출력에 대해 반복
 		for outIdx, out := range tx.Outputs {
 			// 주어진 주소로 잠긴 출력을 찾고 누적된 금액이 요청된 금액보다 작을 때
-			if out.CanBeUnlocked(address) && accumulated < amount {
+			if out.IsLockedWithKey(pubKeyHash) && accumulated < amount {
 				// 출력값을 누적된 금액에 추가
 				accumulated += out.Value
 				// 사용 가능한 출력을 맵에 추가
@@ -282,4 +285,48 @@ Work:
 		}
 	}
 	return accumulated, unspentOuts
+}
+
+func (bc *BlockChain) FindTransaction(ID []byte) (Transaction, error) {
+	iter := bc.Iterator()
+
+	for {
+		block := iter.Next()
+
+		for _, tx := range block.Transactions {
+			if bytes.Equal(tx.ID, ID) {
+				return *tx, nil
+			}
+		}
+
+		if len(block.PrevHash) == 0 {
+			break
+		}
+	}
+
+	return Transaction{}, errors.New("Transaction does not exist")
+}
+
+func (bc *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
+	prevTXs := make(map[string]Transaction)
+
+	for _, in := range tx.Inputs {
+		prevTX, err := bc.FindTransaction(in.ID)
+		Handle(err)
+		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
+	}
+
+	tx.Sign(privKey, prevTXs)
+}
+
+func (bc *BlockChain) VerifyTransaction(tx *Transaction) bool {
+	prevTXs := make(map[string]Transaction)
+
+	for _, in := range tx.Inputs {
+		prevTX, err := bc.FindTransaction(in.ID)
+		Handle(err)
+		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
+	}
+
+	return tx.Verify(prevTXs)
 }
