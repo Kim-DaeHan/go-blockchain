@@ -75,6 +75,10 @@ func (cli *CommandLine) printChain() {
 		// 작업 증명 결과를 출력
 		pow := blockchain.NewProof(block)
 		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
+		// 트랜잭션 정보 출력
+		for _, tx := range block.Transactions {
+			fmt.Println(tx)
+		}
 		fmt.Println()
 
 		// 이전 해시값이 없다면 반복문 종료

@@ -287,46 +287,67 @@ Work:
 	return accumulated, unspentOuts
 }
 
+// 지정된 ID를 가진 트랜잭션 찾는 함수
 func (bc *BlockChain) FindTransaction(ID []byte) (Transaction, error) {
+	// 블록체인을 순회하기 위한 이터레이터 생성
 	iter := bc.Iterator()
 
+	// 블록 반복 순회
 	for {
+		// 다음 블록
 		block := iter.Next()
 
+		// 블록의 트랜잭션 순회
 		for _, tx := range block.Transactions {
+			// 트랜잭션 ID가 지정된 ID와 일치하는지 확인
 			if bytes.Equal(tx.ID, ID) {
+				// 일치하는 트랜잭션을 찾으면 해당 트랜잭션 반환
 				return *tx, nil
 			}
 		}
 
+		// 이전 블록이 없으면 반복 종료
 		if len(block.PrevHash) == 0 {
 			break
 		}
 	}
 
+	// 트랜잭션이 발견되지 않으면 빈 트랜잭션과 에러 반환
 	return Transaction{}, errors.New("Transaction does not exist")
 }
 
+// 트랜잭션 서명함수
 func (bc *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
+	// 이전 트랜잭션을 저장할 맵 생성
 	prevTXs := make(map[string]Transaction)
 
+	// 트랜잭션의 입력을 순회
 	for _, in := range tx.Inputs {
+		// 이전 트랜잭션을 블록체인에서 검색
 		prevTX, err := bc.FindTransaction(in.ID)
 		Handle(err)
+		// 검색된 이진 트랜잭션을 맵에 추가
 		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
 	}
 
+	// 트랜잭션 서명
 	tx.Sign(privKey, prevTXs)
 }
 
+// 트랜잭션 유효성 검사 함수
 func (bc *BlockChain) VerifyTransaction(tx *Transaction) bool {
+	// 이전 트랜잭션을 저장할 맵을 생성
 	prevTXs := make(map[string]Transaction)
 
+	// 트랜잭션의 입력 순회
 	for _, in := range tx.Inputs {
+		// 이전 트랜잭션을 블록체인에서 검색
 		prevTX, err := bc.FindTransaction(in.ID)
 		Handle(err)
+		// 검색된 이전 트랜잭션을 맵에 추가
 		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
 	}
 
+	// 트랜잭션의 유효성 검증
 	return tx.Verify(prevTXs)
 }
