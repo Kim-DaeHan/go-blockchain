@@ -132,6 +132,7 @@ func (cli *CommandLine) send(from, to string, amount int) {
 	chain.AddBlock([]*blockchain.Transaction{tx})
 	fmt.Println("Success!")
 }
+
 func (cli *CommandLine) Run() {
 	// 명령행 인수를 유효성 검사
 	cli.validateArgs()

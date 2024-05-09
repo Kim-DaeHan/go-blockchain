@@ -23,26 +23,35 @@ type Transaction struct {
 	Outputs []TxOutput
 }
 
+// 트랜잭션의 해시값 계산 함수
 func (tx *Transaction) Hash() []byte {
+	// 해시 저장 변수
 	var hash [32]byte
 
+	// 트랜잭션의 복사본 생성
 	txCopy := *tx
+	// 트랜잭션의 ID 초기화
 	txCopy.ID = []byte{}
 
+	// 트랜잭션의 직렬화된 내용을 해시로 변환
 	hash = sha256.Sum256(txCopy.Serialize())
 
 	return hash[:]
 }
 
+// 트랜잭션을 바이스 슬라이스로 직렬화 함수
 func (tx Transaction) Serialize() []byte {
+	// 바이트 슬라이스 저장 버퍼
 	var encoded bytes.Buffer
 
+	// GOB 인코더 생성하여 버퍼에 트랜잭션을 인코딩
 	enc := gob.NewEncoder(&encoded)
 	err := enc.Encode(tx)
 	if err != nil {
 		log.Panic(err)
 	}
 
+	// 직렬화된 트랜잭션을 바이트 슬라이스로 반환
 	return encoded.Bytes()
 }
 
@@ -125,9 +134,9 @@ func NewTransaction(from, to string, amount int, chain *BlockChain) *Transaction
 
 	// 새로운 트랜잭션을 생성하고 ID를 설정
 	tx := Transaction{nil, inputs, outputs}
+
 	tx.ID = tx.Hash()
 	chain.SignTransaction(&tx, w.PrivateKey)
-
 	return &tx
 }
 
@@ -136,56 +145,78 @@ func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.Inputs) == 1 && len(tx.Inputs[0].ID) == 0 && tx.Inputs[0].Out == -1
 }
 
+// 트랜잭션 서명 함수
 func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transaction) {
+	// 코인베이스 트랜잭션이면 함수 종료
 	if tx.IsCoinbase() {
 		return
 	}
 
+	// 트랜잭션의 각 입력값에 대해 이전 트랜잭션 확인
 	for _, in := range tx.Inputs {
+		// 이전 트랜잭션을 찾지 못하면 에러 발생
 		if prevTXs[hex.EncodeToString(in.ID)].ID == nil {
 			log.Panic("ERROR: Previous transaction is not correct")
 		}
 	}
 
+	// 트랜잭션의 복사본 생성
 	txCopy := tx.TrimmedCopy()
 
+	// 트랜잭션의 각 입력값에 대해 서명 생성
 	for inId, in := range txCopy.Inputs {
+		// 이전 트랜잭션 가져옴
 		prevTX := prevTXs[hex.EncodeToString(in.ID)]
+		// 서명 및 공개키 초기화
 		txCopy.Inputs[inId].Signature = nil
 		txCopy.Inputs[inId].PubKey = prevTX.Outputs[in.Out].PubKeyHash
+		// 트랜잭션의 ID 업데이트
 		txCopy.ID = txCopy.Hash()
 		txCopy.Inputs[inId].PubKey = nil
 
+		// 개인 키를 사용하여 서명 생성
 		r, s, err := ecdsa.Sign(rand.Reader, &privKey, txCopy.ID)
 		Handle(err)
 		signature := append(r.Bytes(), s.Bytes()...)
 
+		// 생성된 서명을 트랜잭션의 입력값에 추가
 		tx.Inputs[inId].Signature = signature
 
 	}
 }
 
+// 트랜잭션 유효성 검증 함수
 func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
+	// 코인베이스 트랜잭션이면 항상 유효
 	if tx.IsCoinbase() {
 		return true
 	}
 
+	// 트랜잭션의 각 입력값에 대해 이전 트랜잭션 확인
 	for _, in := range tx.Inputs {
+		// 이전 트랜잭션을 찾지 못하면 에러 발생
 		if prevTXs[hex.EncodeToString(in.ID)].ID == nil {
 			log.Panic("Previous transaction not correct")
 		}
 	}
 
+	// 트랜잭션의 복사본 생성
 	txCopy := tx.TrimmedCopy()
+	// 타원 곡선(p256) 생성
 	curve := elliptic.P256()
 
+	// 트랜잭션의 각 입력값에 대해 서명을 확인
 	for inId, in := range tx.Inputs {
+		// 이전 트랜잭션 가져옴
 		prevTx := prevTXs[hex.EncodeToString(in.ID)]
+		// 서명 및 공개키를 초기화
 		txCopy.Inputs[inId].Signature = nil
 		txCopy.Inputs[inId].PubKey = prevTx.Outputs[in.Out].PubKeyHash
+		// 트랜잭션의 ID를 업데이트
 		txCopy.ID = txCopy.Hash()
 		txCopy.Inputs[inId].PubKey = nil
 
+		// 서명과 공개키 추출
 		r := big.Int{}
 		s := big.Int{}
 
@@ -199,36 +230,50 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 		x.SetBytes(in.PubKey[:(keyLen / 2)])
 		y.SetBytes(in.PubKey[(keyLen / 2):])
 
+		// 타원 곡선 공개키 생성
 		rawPubKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
+		// 서명의 유효성 검증
 		if !ecdsa.Verify(&rawPubKey, txCopy.ID, &r, &s) {
 			return false
 		}
 	}
 
+	// 모든 입력값의 서명이 유효하면 true 반환
 	return true
 }
 
+// 트랜잭션의 복사본을 생성, 입력값의 서명과 공개키 제거 함수
 func (tx *Transaction) TrimmedCopy() Transaction {
+	// 입력값과 출력값을 저장할 빈 슬라이스 초기화
 	var inputs []TxInput
 	var outputs []TxOutput
 
+	// 원본 트랜잭션의 각 입력값에 대해 새로운 TxInput을 생성하여 inputs 슬라이스에 추가
 	for _, in := range tx.Inputs {
+		// 서명과 공개키는 nil로 초기화
 		inputs = append(inputs, TxInput{in.ID, in.Out, nil, nil})
 	}
 
+	// 원본 트랜잭션의 각 출력값에 대해 새로운 TxOutput을 생성하여 outputs 슬라이스에 추가
 	for _, out := range tx.Outputs {
 		outputs = append(outputs, TxOutput{out.Value, out.PubKeyHash})
 	}
 
+	// 입력값과 출력값을 가지고 있는 새로운 트랜잭션을 생성
 	txCopy := Transaction{tx.ID, inputs, outputs}
 
+	// 새로운 트랜잭션의 복사본 반환
 	return txCopy
 }
 
+// 트랜잭션을 문자열로 표현하는 함수
 func (tx Transaction) String() string {
 	var lines []string
-
+	fmt.Println("String 시작")
+	// 트랜잭션의 ID를 포함한 문자열을 추가
 	lines = append(lines, fmt.Sprintf("--- Transaction %x:", tx.ID))
+
+	// 각 입력값에 대한 정보를 문자열에 추가
 	for i, input := range tx.Inputs {
 		lines = append(lines, fmt.Sprintf("     Input %d:", i))
 		lines = append(lines, fmt.Sprintf("       TXID:     %x", input.ID))
@@ -237,11 +282,13 @@ func (tx Transaction) String() string {
 		lines = append(lines, fmt.Sprintf("       PubKey:    %x", input.PubKey))
 	}
 
+	// 각 출력값에 대한 정보를 문자열에 추가
 	for i, output := range tx.Outputs {
 		lines = append(lines, fmt.Sprintf("     Output %d:", i))
 		lines = append(lines, fmt.Sprintf("       Value:  %d", output.Value))
 		lines = append(lines, fmt.Sprintf("       Script: %x", output.PubKeyHash))
 	}
 
+	// 모든 정보를 개행 문자로 구분하여 하나의 문자열로 결합
 	return strings.Join(lines, "\n")
 }
