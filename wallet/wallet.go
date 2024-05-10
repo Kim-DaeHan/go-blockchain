@@ -99,12 +99,19 @@ func Checksum(payload []byte) []byte {
 	return secondHash[:checksumLength]
 }
 
+// 주어진 주소가 유효한지 검증하는 함수
 func ValidateAddress(address string) bool {
+	// Base58 디코딩하여 공개 키 해시를 가져옴
 	pubKeyHash := Base58Decode([]byte(address))
+	// 실제 체크섬을 가져옴
 	actualChecksum := pubKeyHash[len(pubKeyHash)-checksumLength:]
+	// 버전 정보를 가져옴
 	version := pubKeyHash[0]
+	// 버전 정보를 제외한 공개 키 해시를 가져옴
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-checksumLength]
+	// 대상 체크섬을 계산
 	targetChecksum := Checksum(append([]byte{version}, pubKeyHash...))
 
+	// 실제 체크섬과 대상 체크섬을 비교하여 유효성을 확인하고 결과를 반환
 	return bytes.Equal(actualChecksum, targetChecksum)
 }

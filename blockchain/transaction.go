@@ -266,6 +266,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	return txCopy
 }
 
+// Go 언어에서는 fmt 패키지의 Println() 함수 등을 사용하여 구조체를 출력할 때, 해당 구조체가 String() 메서드를 가지고 있다면 자동으로 그 메서드를 호출하여 문자열 표현을 가져옴
 // 트랜잭션을 문자열로 표현하는 함수
 func (tx Transaction) String() string {
 	var lines []string
