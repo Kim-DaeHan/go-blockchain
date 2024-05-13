@@ -109,7 +109,7 @@ func InitBlockChain(address string) *BlockChain {
 	return &blockchain
 }
 
-func (chain *BlockChain) AddBlock(transactions []*Transaction) {
+func (chain *BlockChain) AddBlock(transactions []*Transaction) *Block {
 	var lastHash []byte
 
 	for _, tx := range transactions {
@@ -147,6 +147,8 @@ func (chain *BlockChain) AddBlock(transactions []*Transaction) {
 		return err
 	})
 	Handle(err)
+
+	return newBlock
 }
 
 // 블록체인의 반복자를 생성
