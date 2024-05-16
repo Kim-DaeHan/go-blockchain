@@ -105,6 +105,10 @@ func (cli *CommandLine) createBlockChain(address string) {
 
 	chain := blockchain.InitBlockChain(address)
 	chain.Database.Close()
+
+	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
+	UTXOSet.Reindex()
+
 	fmt.Println("Finished!")
 }
 

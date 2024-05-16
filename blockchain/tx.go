@@ -60,20 +60,28 @@ func NewTXOutput(value int, address string) *TxOutput {
 	return txo
 }
 
+// TxOutputs 구조체를 직렬화하여 바이트 슬라이스로 반환
 func (outs TxOutputs) Serialize() []byte {
+	// 바이트 버퍼를 생성
 	var buffer bytes.Buffer
 
+	// 인코더를 생성하고, 구조체에 버퍼에 인코딩
 	encode := gob.NewEncoder(&buffer)
+	// Encode 함수를 호출하여 TxOutputs를 바이트 슬라이스로 인코딩
 	err := encode.Encode(outs)
 	Handle(err)
 
 	return buffer.Bytes()
 }
 
+// 주어진 바이트 슬라이스를 Txoutputs 구조체로 역직렬화
 func DeserializeOutputs(data []byte) TxOutputs {
+	// 역직렬화된 데이터를 담을 변수를 선언
 	var outputs TxOutputs
 
+	// 디코더를 생성하고 ,주어진 바이너리 데이터를 디코딩하여 구조체로 변환
 	decode := gob.NewDecoder(bytes.NewReader(data))
+	// Decode 함수를 호출하여 바이트 슬라이스를 TxOutputs 구조체로 디코딩
 	err := decode.Decode(&outputs)
 	Handle(err)
 
