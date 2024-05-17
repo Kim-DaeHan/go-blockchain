@@ -184,33 +184,48 @@ func (iter *BlockChainIterator) Next() *Block {
 
 // UTXO 찾는 함수
 func (chain *BlockChain) FindUTXO() map[string]TxOutputs {
+	// UTXO와 소비된 트랜잭션 아웃풋을 저장하기 위한 맵 생성
 	UTXO := make(map[string]TxOutputs)
 	spentTXOs := make(map[string][]int)
 
+	// 블록체인 순회
 	iter := chain.Iterator()
 
 	for {
+		// 다음 블록
 		block := iter.Next()
 
+		// 블록의 모든 트랜잭션을 반복
 		for _, tx := range block.Transactions {
+			// 트랜잭션의 ID를 문자열로 변환
 			txID := hex.EncodeToString(tx.ID)
 
+			// 트랜잭션의 출력값을 검사
 		Outputs:
 			for outIdx, out := range tx.Outputs {
+				// 소비된 트랜잭션을 확인
 				if spentTXOs[txID] != nil {
+					// 소비된 트랜잭션에 해당하는 출력값 확인
 					for _, spentOut := range spentTXOs[txID] {
+						// 이미 소비된 경우 반복문을 건너뜀
 						if spentOut == outIdx {
 							continue Outputs
 						}
 					}
 				}
+				// UTXO 맵에서 해당 트랜잭션의 출력값을 가져옴
 				outs := UTXO[txID]
+				// 출력값을 UTXO에 추가
 				outs.Outputs = append(outs.Outputs, out)
 				UTXO[txID] = outs
 			}
+
+			// 코인베이스 트랜잭션이 아닌 경우 소비된 트랜잭션을 처리
 			if !tx.IsCoinbase() {
 				for _, in := range tx.Inputs {
+					// 입력값의 트랜잭션 ID를 문자열로 변환
 					inTxID := hex.EncodeToString(in.ID)
+					// 소비된 트랜잭션을 저장
 					spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Out)
 				}
 			}
