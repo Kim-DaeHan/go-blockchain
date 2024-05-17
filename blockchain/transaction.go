@@ -55,26 +55,15 @@ func (tx Transaction) Serialize() []byte {
 	return encoded.Bytes()
 }
 
-// 트랜잭션 id 설정
-func (tx *Transaction) SetID() {
-	var encoded bytes.Buffer
-	var hash [32]byte
-
-	// Gob 인코더를 사용하여 Transaction을 바이트 슬라이스로 인코딩
-	encode := gob.NewEncoder(&encoded)
-	err := encode.Encode(tx)
-	Handle(err)
-
-	// 인코딩도니 데이터를 해시하여 Transaction의 ID로 설정
-	hash = sha256.Sum256(encoded.Bytes())
-	tx.ID = hash[:]
-}
-
 // 코인베이스 트랜잭션을 생성(새로운 블록에 대한 보상 트랜잭션)
 func CoinbaseTx(to, data string) *Transaction {
 	// 데이터가 비어있는 경우, 기본 데이터를 생성
 	if data == "" {
-		data = fmt.Sprintf("Coins to %s", to)
+		randData := make([]byte, 20)
+		_, err := rand.Read(randData)
+		Handle(err)
+
+		data = fmt.Sprintf("%x", randData)
 	}
 
 	// 트랜잭션의 입력을 설정
@@ -86,14 +75,14 @@ func CoinbaseTx(to, data string) *Transaction {
 
 	// 트랜잭션을 생성하고 ID를 설정
 	tx := Transaction{nil, []TxInput{txin}, []TxOutput{*txout}}
-	tx.SetID()
+	tx.ID = tx.Hash()
 
 	// 생성된 트랜잭션 반환
 	return &tx
 }
 
 // 새로운 일반 트랜잭션 생성(자금 전송)
-func NewTransaction(from, to string, amount int, chain *BlockChain) *Transaction {
+func NewTransaction(from, to string, amount int, UTXO *UTXOSet) *Transaction {
 	var inputs []TxInput   // 입력값을 저장할 수 있는 슬라이스 선언
 	var outputs []TxOutput // 출력값을 저장할 수 있는 슬라이스 선언
 
@@ -104,7 +93,7 @@ func NewTransaction(from, to string, amount int, chain *BlockChain) *Transaction
 
 	// 지출 가능한 출력값 찾음
 	// 총 잔액과 사용할 수 있는 출력 반환
-	acc, validOutputs := chain.FindSpendableOutputs(pubKeyHash, amount)
+	acc, validOutputs := UTXO.FindSpendableOutputs(pubKeyHash, amount)
 
 	// 잔액이 충분하지 않으면 프로그램 중단
 	if acc < amount {
@@ -136,7 +125,8 @@ func NewTransaction(from, to string, amount int, chain *BlockChain) *Transaction
 	tx := Transaction{nil, inputs, outputs}
 
 	tx.ID = tx.Hash()
-	chain.SignTransaction(&tx, w.PrivateKey)
+	UTXO.Blockchain.SignTransaction(&tx, w.PrivateKey)
+
 	return &tx
 }
 

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 
@@ -108,8 +109,14 @@ func InitBlockChain(address string) *BlockChain {
 	return &blockchain
 }
 
-func (chain *BlockChain) AddBlock(transactions []*Transaction) {
+func (chain *BlockChain) AddBlock(transactions []*Transaction) *Block {
 	var lastHash []byte
+
+	for _, tx := range transactions {
+		if !chain.VerifyTransaction(tx) {
+			log.Panic("Invalid Transaction")
+		}
+	}
 
 	// 데이터베이스를 읽기 위한 View 함수 실행
 	err := chain.Database.View(func(txn *badger.Txn) error {
@@ -140,6 +147,8 @@ func (chain *BlockChain) AddBlock(transactions []*Transaction) {
 		return err
 	})
 	Handle(err)
+
+	return newBlock
 }
 
 // 블록체인의 반복자를 생성
@@ -173,118 +182,60 @@ func (iter *BlockChainIterator) Next() *Block {
 	return block
 }
 
-// 미사용 트랜잭션 찾는 함수
-func (chain *BlockChain) FindUnspentTransactions(pubKeyHash []byte) []Transaction {
-	// 사용되지 않은 트랜잭션들을 저장할 슬라이스 선언
-	var unspentTxs []Transaction
-
-	// 이미 소비된 트랜잭션 출력(UTXO)들을 저장하는 맵을 초기화
+// UTXO 찾는 함수
+func (chain *BlockChain) FindUTXO() map[string]TxOutputs {
+	// UTXO와 소비된 트랜잭션 아웃풋을 저장하기 위한 맵 생성
+	UTXO := make(map[string]TxOutputs)
 	spentTXOs := make(map[string][]int)
 
-	// 블록체인의 이터레이터를 생성
+	// 블록체인 순회
 	iter := chain.Iterator()
 
 	for {
-		// 다음 블록 가져옴
+		// 다음 블록
 		block := iter.Next()
 
-		// 블록 내의 모든 트랜잭션 순회
+		// 블록의 모든 트랜잭션을 반복
 		for _, tx := range block.Transactions {
-			// 트랜잭션 ID를 문자열로 변환
+			// 트랜잭션의 ID를 문자열로 변환
 			txID := hex.EncodeToString(tx.ID)
 
-			// 트랜잭션 출력 순회
+			// 트랜잭션의 출력값을 검사
 		Outputs:
 			for outIdx, out := range tx.Outputs {
-				// 이미 소비된 UTXO인지 확인
+				// 소비된 트랜잭션을 확인
 				if spentTXOs[txID] != nil {
-					// 소비된 UTXO 순회
+					// 소비된 트랜잭션에 해당하는 출력값 확인
 					for _, spentOut := range spentTXOs[txID] {
-						// 이미 소비된 UTXO이면 건너뜀
+						// 이미 소비된 경우 반복문을 건너뜀
 						if spentOut == outIdx {
 							continue Outputs
 						}
 					}
 				}
-				// UTXO가 주어진 주소로 잠긴 것인지 확인
-				if out.IsLockedWithKey(pubKeyHash) {
-					// 사용되지 않은 트랜잭션에 추가
-					unspentTxs = append(unspentTxs, *tx)
-				}
+				// UTXO 맵에서 해당 트랜잭션의 출력값을 가져옴
+				outs := UTXO[txID]
+				// 출력값을 UTXO에 추가
+				outs.Outputs = append(outs.Outputs, out)
+				UTXO[txID] = outs
 			}
-			// 코인베이스 트랜잭션이 아닌 경우, 입력을 확인
+
+			// 코인베이스 트랜잭션이 아닌 경우 소비된 트랜잭션을 처리
 			if !tx.IsCoinbase() {
 				for _, in := range tx.Inputs {
-					// 해당 주소로 잠김 UTXO를 찾고, 이미 소비된 것으로 표시
-					if in.UsesKey(pubKeyHash) {
-						inTxID := hex.EncodeToString(in.ID)
-						spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Out)
-					}
+					// 입력값의 트랜잭션 ID를 문자열로 변환
+					inTxID := hex.EncodeToString(in.ID)
+					// 소비된 트랜잭션을 저장
+					spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Out)
 				}
 			}
 		}
 
-		// 이전 블록 없으면 루프 종료
 		if len(block.PrevHash) == 0 {
 			break
 		}
 	}
-	// 사용되지 않은 트랜잭션 슬라이스 반환
-	return unspentTxs
-}
-
-// UTXO 찾는 함수
-func (chain *BlockChain) FindUTXO(pubKeyHash []byte) []TxOutput {
-	// 새로운 UTXO 목록을 담을 슬라이스 생성
-	var UTXOs []TxOutput
-	// 주어진 주소에 대한 모든 미사용 트랜잭션을 찾음
-	unspentTransactions := chain.FindUnspentTransactions(pubKeyHash)
-
-	// 모든 미사용 트랜잭션에 대한 반복
-	for _, tx := range unspentTransactions {
-		// 각 트랜잭션의 출력에 대해 반복
-		for _, out := range tx.Outputs {
-			// 주어진 주소로 잠긴 출력을 UTXO 목록에 추가
-			if out.IsLockedWithKey(pubKeyHash) {
-				UTXOs = append(UTXOs, out)
-			}
-		}
-	}
-	return UTXOs
-}
-
-// 사용가능한 출력 찾는 함수
-func (chain *BlockChain) FindSpendableOutputs(pubKeyHash []byte, amount int) (int, map[string][]int) {
-	// 사용 가능한 출력을 추적하기 위한 맵 생성
-	unspentOuts := make(map[string][]int)
-	// 주어진 주소에 대한 모든 미사용 트랜잭션을 찾음
-	unspentTxs := chain.FindUnspentTransactions(pubKeyHash)
-	// 누적된 총량 초기화
-	accumulated := 0
-
-	// 모든 미사용 트랜잭션에 대한 반복
-Work:
-	for _, tx := range unspentTxs {
-		// 트랜잭션 ID를 문자열로 변환하여 사용
-		txID := hex.EncodeToString(tx.ID)
-
-		// 각 출력에 대해 반복
-		for outIdx, out := range tx.Outputs {
-			// 주어진 주소로 잠긴 출력을 찾고 누적된 금액이 요청된 금액보다 작을 때
-			if out.IsLockedWithKey(pubKeyHash) && accumulated < amount {
-				// 출력값을 누적된 금액에 추가
-				accumulated += out.Value
-				// 사용 가능한 출력을 맵에 추가
-				unspentOuts[txID] = append(unspentOuts[txID], outIdx)
-
-				// 누적된 금액이 요청된 금액 이상이면 반복 중단
-				if accumulated >= amount {
-					break Work
-				}
-			}
-		}
-	}
-	return accumulated, unspentOuts
+	return UTXO
 }
 
 // 지정된 ID를 가진 트랜잭션 찾는 함수
