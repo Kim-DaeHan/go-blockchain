@@ -75,7 +75,7 @@ func (u UTXOSet) FindSpendableOutputs(pubKeyHash []byte, amount int) (int, map[s
 }
 
 // 주어진 공개키 해시에 대한 모든 UTXO를 찾음
-func (u UTXOSet) FindUTXO(pubKeyHash []byte) []TxOutput {
+func (u UTXOSet) FindUnspentTransactions(pubKeyHash []byte) []TxOutput {
 	// UTXO 목록을 저장할 슬라이스
 	var UTXOs []TxOutput
 

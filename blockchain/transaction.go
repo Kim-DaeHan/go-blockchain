@@ -59,7 +59,7 @@ func (tx Transaction) Serialize() []byte {
 func CoinbaseTx(to, data string) *Transaction {
 	// 데이터가 비어있는 경우, 기본 데이터를 생성
 	if data == "" {
-		randData := make([]byte, 20)
+		randData := make([]byte, 24)
 		_, err := rand.Read(randData)
 		Handle(err)
 
@@ -70,8 +70,8 @@ func CoinbaseTx(to, data string) *Transaction {
 	// 빈 바이트 슬라이스와 -1 값을 가지는 데이터를 사용
 	txin := TxInput{[]byte{}, -1, nil, []byte(data)}
 
-	// 100 단위의 코인을 수신자에게 지급
-	txout := NewTXOutput(100, to)
+	// 20 단위의 코인을 수신자에게 지급
+	txout := NewTXOutput(20, to)
 
 	// 트랜잭션을 생성하고 ID를 설정
 	tx := Transaction{nil, []TxInput{txin}, []TxOutput{*txout}}
@@ -260,7 +260,6 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 // 트랜잭션을 문자열로 표현하는 함수
 func (tx Transaction) String() string {
 	var lines []string
-	fmt.Println("String 시작")
 	// 트랜잭션의 ID를 포함한 문자열을 추가
 	lines = append(lines, fmt.Sprintf("--- Transaction %x:", tx.ID))
 
