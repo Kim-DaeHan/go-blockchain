@@ -123,7 +123,7 @@ func (cli *CommandLine) getBalance(address string) {
 	balance := 0
 	pubKeyHash := wallet.Base58Decode([]byte(address))
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
-	UTXOs := UTXOSet.FindUTXO(pubKeyHash)
+	UTXOs := UTXOSet.FindUnspentTransactions(pubKeyHash)
 
 	for _, out := range UTXOs {
 		balance += out.Value
@@ -145,7 +145,8 @@ func (cli *CommandLine) send(from, to string, amount int) {
 	defer chain.Database.Close()
 
 	tx := blockchain.NewTransaction(from, to, amount, &UTXOSet)
-	block := chain.AddBlock([]*blockchain.Transaction{tx})
+	cbTx := blockchain.CoinbaseTx(from, "")
+	block := chain.AddBlock([]*blockchain.Transaction{cbTx, tx})
 	UTXOSet.Update(block)
 	fmt.Println("Success!")
 }

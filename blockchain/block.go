@@ -2,7 +2,6 @@ package blockchain
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/gob"
 	"log"
 )
@@ -17,19 +16,16 @@ type Block struct {
 // 트랜잭션을 해시하는 함수
 func (b *Block) HashTransactions() []byte {
 	var txHashes [][]byte // 트랜잭션의 해시를 저장하는 슬라이스
-	var txHash [32]byte   // 최종적으로 생성된 모든 트랜잭션 해시들을 하나로 합친 해시값
 
 	// 블록 내의 모든 트랜잭션 순회
 	for _, tx := range b.Transactions {
 		// 각 트랜잭션의 ID를 txHashes 슬라이스에 추가
-		txHashes = append(txHashes, tx.ID)
+		txHashes = append(txHashes, tx.Serialize())
 	}
 
-	// txHashes 슬라이스에 저장된 모든 트랜잭션 해시들을 하나의 바이트 슬라이스로 합친 뒤 SHA-256 해시값을 계산
-	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+	tree := NewMerkleTree(txHashes)
 
-	// SHA-256 해시값을 바이트 슬라이스로 반환
-	return txHash[:]
+	return tree.RootNode.Data
 }
 
 // 블록 생성하는 함수

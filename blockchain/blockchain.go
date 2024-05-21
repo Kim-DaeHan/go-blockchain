@@ -287,6 +287,11 @@ func (bc *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey)
 
 // 트랜잭션 유효성 검사 함수
 func (bc *BlockChain) VerifyTransaction(tx *Transaction) bool {
+
+	if tx.IsCoinbase() {
+		return true
+	}
+
 	// 이전 트랜잭션을 저장할 맵을 생성
 	prevTXs := make(map[string]Transaction)
 
