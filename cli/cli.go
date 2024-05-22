@@ -36,13 +36,20 @@ func (cli *CommandLine) validateArgs() {
 	}
 }
 
+// UTXO 재색인
 func (cli *CommandLine) reindexUTXO() {
+	// 블록체인을 계속 사용하여 블록체인 객체 가져옴
 	chain := blockchain.ContinueBlockChain("")
 	defer chain.Database.Close()
+
+	// UTXOSet 객체를 생성하고 블록체인을 할당
 	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
+	// UTXO 집합을 재색인
 	UTXOSet.Reindex()
 
+	// UTXO 집합에 있는 트랜잭션 수를 카운트
 	count := UTXOSet.CountTransactions()
+	// 재색인 완료 메시지와 트랜잭션 수를 출력
 	fmt.Printf("Done! There are %d transactions in the UTXO set.\n", count)
 }
 
@@ -98,33 +105,48 @@ func (cli *CommandLine) printChain() {
 		}
 	}
 }
+
+// 새로운 블록체인 생성
 func (cli *CommandLine) createBlockChain(address string) {
+	// 지갑 주소가 유효한지 검증
 	if !wallet.ValidateAddress(address) {
 		log.Panic("Address is not Valid")
 	}
 
+	// 블록체인을 초기화하고 주소를 첫 블록의 수신자로 지정
 	chain := blockchain.InitBlockChain(address)
 	chain.Database.Close()
 
+	// UTXOSet 객체 생성하고 블록체인 할당
 	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
+	// UTXO 집합 재색인
 	UTXOSet.Reindex()
 
 	fmt.Println("Finished!")
 }
 
+// 지갑 주소의 잔액을 조회
 func (cli *CommandLine) getBalance(address string) {
+	// 지갑 주소 유효한지 검증
 	if !wallet.ValidateAddress(address) {
 		log.Panic("Address is not Valid")
 	}
+
+	// 기존 블록체인을 이어서 사용
 	chain := blockchain.ContinueBlockChain(address)
+	// UTXOSet 객체를 생성하고 블록체인 할당
 	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	defer chain.Database.Close()
 
+	// 잔액 초기화
 	balance := 0
+	// 주소를 Base58로 디코딩하고 공개 키 해시 추출
 	pubKeyHash := wallet.Base58Decode([]byte(address))
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
+	// 사용되지 않은 트랜잭션 출력(UTXO)를 찾음
 	UTXOs := UTXOSet.FindUnspentTransactions(pubKeyHash)
 
+	// 모든 UTXO의 값을 합산하여 잔액 계산
 	for _, out := range UTXOs {
 		balance += out.Value
 	}
@@ -132,21 +154,30 @@ func (cli *CommandLine) getBalance(address string) {
 	fmt.Printf("Balance of %s: %d\n", address, balance)
 }
 
+// 트랜잭션을 전송
 func (cli *CommandLine) send(from, to string, amount int) {
+	// 수신 지갑 주소 유효한지 검증
 	if !wallet.ValidateAddress(to) {
 		log.Panic("Address is not Valid")
 	}
+	// 발신 지갑 주소 유효한지 검증
 	if !wallet.ValidateAddress(from) {
 		log.Panic("Address is not Valid")
 	}
 
+	// 기존 블록체인을 이어서 사용
 	chain := blockchain.ContinueBlockChain(from)
+	// UTXOSet 객체를 생성하고 블록체인을 할당
 	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	defer chain.Database.Close()
 
+	// 새로운 트랜잭션을 생성
 	tx := blockchain.NewTransaction(from, to, amount, &UTXOSet)
+	// 코인베이스 트랜잭션을 생성
 	cbTx := blockchain.CoinbaseTx(from, "")
+	// 새 블록 추가
 	block := chain.AddBlock([]*blockchain.Transaction{cbTx, tx})
+	// UTXO 집합을 업데이트
 	UTXOSet.Update(block)
 	fmt.Println("Success!")
 }
