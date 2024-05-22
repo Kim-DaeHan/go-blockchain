@@ -23,8 +23,10 @@ func (b *Block) HashTransactions() []byte {
 		txHashes = append(txHashes, tx.Serialize())
 	}
 
+	// 트랜잭션 해시들로부터 Merkle 트리 생성
 	tree := NewMerkleTree(txHashes)
 
+	// Merkle 트리의 루트 노드 데이터를 반환
 	return tree.RootNode.Data
 }
 

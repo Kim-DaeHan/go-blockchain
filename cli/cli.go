@@ -36,13 +36,20 @@ func (cli *CommandLine) validateArgs() {
 	}
 }
 
+// UTXO 재색인
 func (cli *CommandLine) reindexUTXO() {
+	// 블록체인을 계속 사용하여 블록체인 객체 가져옴
 	chain := blockchain.ContinueBlockChain("")
 	defer chain.Database.Close()
+
+	// UTXOSet 객체를 생성하고 블록체인을 할당
 	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
+	// UTXO 집합을 재색인
 	UTXOSet.Reindex()
 
+	// UTXO 집합에 있는 트랜잭션 수를 카운트
 	count := UTXOSet.CountTransactions()
+	// 재색인 완료 메시지와 트랜잭션 수를 출력
 	fmt.Printf("Done! There are %d transactions in the UTXO set.\n", count)
 }
 
