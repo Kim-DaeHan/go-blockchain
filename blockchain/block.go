@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"encoding/gob"
 	"log"
+	"time"
 )
 
 type Block struct {
+	Timestamp    int64
 	Hash         []byte
 	Transactions []*Transaction
 	PrevHash     []byte
 	Nonce        int
+	Height       int
 }
 
 // 트랜잭션을 해시하는 함수
@@ -31,10 +34,10 @@ func (b *Block) HashTransactions() []byte {
 }
 
 // 블록 생성하는 함수
-func CreateBlock(txs []*Transaction, prevHash []byte) *Block {
+func CreateBlock(txs []*Transaction, prevHash []byte, height int) *Block {
 	// 블록을 생성하고 블록에 대한 포인터를 출력
 	// 블록 생성자를 사용하여 새 블록을 생성
-	block := &Block{[]byte{}, txs, prevHash, 0}
+	block := &Block{time.Now().Unix(), []byte{}, txs, prevHash, 0, height}
 	pow := NewProof(block)
 	nonce, hash := pow.Run()
 
@@ -46,7 +49,7 @@ func CreateBlock(txs []*Transaction, prevHash []byte) *Block {
 
 // Genesis 블록 만드는 함수
 func Genesis(coinbase *Transaction) *Block {
-	return CreateBlock([]*Transaction{coinbase}, []byte{})
+	return CreateBlock([]*Transaction{coinbase}, []byte{}, 0)
 }
 
 // 블록구조 직렬화

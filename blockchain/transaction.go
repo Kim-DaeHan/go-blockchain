@@ -55,6 +55,15 @@ func (tx Transaction) Serialize() []byte {
 	return encoded.Bytes()
 }
 
+func DeserializeTransaction(data []byte) Transaction {
+	var transaction Transaction
+
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	err := decoder.Decode(&transaction)
+	Handle(err)
+	return transaction
+}
+
 // 코인베이스 트랜잭션을 생성(새로운 블록에 대한 보상 트랜잭션)
 func CoinbaseTx(to, data string) *Transaction {
 	// 데이터가 비어있는 경우, 기본 데이터를 생성
