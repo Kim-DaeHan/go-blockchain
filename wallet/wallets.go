@@ -4,26 +4,27 @@ import (
 	"bytes"
 	"crypto/elliptic"
 	"encoding/gob"
+	"fmt"
 	"log"
 	"os"
 )
 
 // 지갑 정보를 저장할 파일 경로
-const walletFile = "./tmp/wallets.data"
+const walletFile = "./tmp/wallets_%s.data"
 
 type Wallets struct {
 	Wallets map[string]*Wallet
 }
 
 // 새로운 Wallets 구조체 생성 함수
-func CreateWallets() (*Wallets, error) {
+func CreateWallets(nodeId string) (*Wallets, error) {
 	// 빈 구조체 생성
 	wallets := Wallets{}
 	// 맵 초기화
 	wallets.Wallets = make(map[string]*Wallet)
 
 	// 파일에서 지갑 정보를 불러와서 에러 확인
-	err := wallets.LoadFile()
+	err := wallets.LoadFile(nodeId)
 
 	return &wallets, err
 }
@@ -62,7 +63,8 @@ func (ws *Wallets) GetWallet(address string) Wallet {
 }
 
 // 지갑 파일을 읽어와서 Wallets 구조체에 저장
-func (ws *Wallets) LoadFile() error {
+func (ws *Wallets) LoadFile(nodeId string) error {
+	walletFile := fmt.Sprintf(walletFile, nodeId)
 	if _, err := os.Stat(walletFile); os.IsNotExist(err) {
 		return err
 	}
@@ -93,9 +95,10 @@ func (ws *Wallets) LoadFile() error {
 }
 
 // Wallets 구조체의 정보를 파일에 저장
-func (ws *Wallets) SaveFile() {
+func (ws *Wallets) SaveFile(nodeId string) {
 	// 저장할 내용을 담을 버퍼 생성
 	var content bytes.Buffer
+	walletFile := fmt.Sprintf(walletFile, nodeId)
 
 	// Gob 인코더에 타원 곡선 등록
 	gob.Register(elliptic.P256())

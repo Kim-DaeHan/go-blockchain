@@ -91,13 +91,10 @@ func CoinbaseTx(to, data string) *Transaction {
 }
 
 // 새로운 일반 트랜잭션 생성(자금 전송)
-func NewTransaction(from, to string, amount int, UTXO *UTXOSet) *Transaction {
+func NewTransaction(w *wallet.Wallet, to string, amount int, UTXO *UTXOSet) *Transaction {
 	var inputs []TxInput   // 입력값을 저장할 수 있는 슬라이스 선언
 	var outputs []TxOutput // 출력값을 저장할 수 있는 슬라이스 선언
 
-	wallets, err := wallet.CreateWallets()
-	Handle(err)
-	w := wallets.GetWallet(from)
 	pubKeyHash := wallet.PublicKeyHash(w.PublicKey)
 
 	// 지출 가능한 출력값 찾음
@@ -121,6 +118,8 @@ func NewTransaction(from, to string, amount int, UTXO *UTXOSet) *Transaction {
 			inputs = append(inputs, input)
 		}
 	}
+
+	from := fmt.Sprintf("%s", w.Address())
 
 	// 출력값을 생성하여 수신자에게 보내는 슬라이스를 추가
 	outputs = append(outputs, *NewTXOutput(amount, to))
