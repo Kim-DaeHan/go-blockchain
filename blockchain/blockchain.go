@@ -46,8 +46,8 @@ func ContinueBlockChain(nodeId string) *BlockChain {
 
 	// Badger 데이터베이스의 옵션 설정
 	opts := badger.DefaultOptions
-	opts.Dir = dbPath
-	opts.ValueDir = dbPath
+	opts.Dir = path
+	opts.ValueDir = path
 
 	// 데이터베이스 오픈
 	db, err := openDB(path, opts)
@@ -80,8 +80,8 @@ func InitBlockChain(address, nodeId string) *BlockChain {
 
 	// Badger 데이터베이스의 옵션 설정
 	opts := badger.DefaultOptions
-	opts.Dir = dbPath
-	opts.ValueDir = dbPath
+	opts.Dir = path
+	opts.ValueDir = path
 
 	// 데이터베이스 오픈
 	db, err := openDB(path, opts)
