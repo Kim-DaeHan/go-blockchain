@@ -55,6 +55,19 @@ func (tx Transaction) Serialize() []byte {
 	return encoded.Bytes()
 }
 
+// 주어진 바이트 배열을 디코딩 하여 Transaction 구조체로 변환하는 함수
+func DeserializeTransaction(data []byte) Transaction {
+	// 디코딩한 결과를 저장할 Transaction 구조체 선언
+	var transaction Transaction
+
+	// 바이트 배열을 읽기 위해 bytes.Reader를 생성하고, gob 디코더 생성
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+	// 바이트 배열을 Transaction 구조체로 디코딩
+	err := decoder.Decode(&transaction)
+	Handle(err)
+	return transaction
+}
+
 // 코인베이스 트랜잭션을 생성(새로운 블록에 대한 보상 트랜잭션)
 func CoinbaseTx(to, data string) *Transaction {
 	// 데이터가 비어있는 경우, 기본 데이터를 생성
@@ -82,13 +95,10 @@ func CoinbaseTx(to, data string) *Transaction {
 }
 
 // 새로운 일반 트랜잭션 생성(자금 전송)
-func NewTransaction(from, to string, amount int, UTXO *UTXOSet) *Transaction {
+func NewTransaction(w *wallet.Wallet, to string, amount int, UTXO *UTXOSet) *Transaction {
 	var inputs []TxInput   // 입력값을 저장할 수 있는 슬라이스 선언
 	var outputs []TxOutput // 출력값을 저장할 수 있는 슬라이스 선언
 
-	wallets, err := wallet.CreateWallets()
-	Handle(err)
-	w := wallets.GetWallet(from)
 	pubKeyHash := wallet.PublicKeyHash(w.PublicKey)
 
 	// 지출 가능한 출력값 찾음
@@ -112,6 +122,8 @@ func NewTransaction(from, to string, amount int, UTXO *UTXOSet) *Transaction {
 			inputs = append(inputs, input)
 		}
 	}
+
+	from := fmt.Sprintf("%s", w.Address())
 
 	// 출력값을 생성하여 수신자에게 보내는 슬라이스를 추가
 	outputs = append(outputs, *NewTXOutput(amount, to))

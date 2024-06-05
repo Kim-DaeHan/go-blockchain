@@ -615,9 +615,9 @@ func HandleConnection(conn net.Conn, chain *blockchain.BlockChain) {
 }
 
 // 서버를 시작하는 함수
-func StartServer(nodeID, minerAddress string) {
+func StartServer(nodeId, minerAddress string) {
 	// 노드 주소 설정
-	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
+	nodeAddress = fmt.Sprintf("localhost:%s", nodeId)
 	// 마이너 주소 설정
 	mineAddress = minerAddress
 	// TCP 연결 대기
@@ -630,7 +630,7 @@ func StartServer(nodeID, minerAddress string) {
 	defer ln.Close()
 
 	// 블록체인 계속 사용
-	chain := blockchain.ContinueBlockChain(nodeID)
+	chain := blockchain.ContinueBlockChain(nodeId)
 	// 블록체인 데이터베이스 종료
 	defer chain.Database.Close()
 	// 데이터베이스 종료 핸들러 실행
