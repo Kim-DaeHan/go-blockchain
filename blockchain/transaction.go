@@ -55,10 +55,14 @@ func (tx Transaction) Serialize() []byte {
 	return encoded.Bytes()
 }
 
+// 주어진 바이트 배열을 디코딩 하여 Transaction 구조체로 변환하는 함수
 func DeserializeTransaction(data []byte) Transaction {
+	// 디코딩한 결과를 저장할 Transaction 구조체 선언
 	var transaction Transaction
 
+	// 바이트 배열을 읽기 위해 bytes.Reader를 생성하고, gob 디코더 생성
 	decoder := gob.NewDecoder(bytes.NewReader(data))
+	// 바이트 배열을 Transaction 구조체로 디코딩
 	err := decoder.Decode(&transaction)
 	Handle(err)
 	return transaction
