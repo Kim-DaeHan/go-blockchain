@@ -201,6 +201,7 @@ func (u *UTXOSet) Update(block *Block) {
 			if !tx.IsCoinbase() {
 				// 각 입력에 대해 반복
 				for _, in := range tx.Inputs {
+					fmt.Printf("in: %x", in.ID)
 					// 업데이트된 출력을 저장할 구조체 생성
 					updatedOuts := TxOutputs{}
 					// 입력 ID에 utxoPrefix를 추가
