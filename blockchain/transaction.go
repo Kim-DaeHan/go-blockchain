@@ -136,6 +136,8 @@ func NewTransaction(w *wallet.Wallet, to string, amount int, UTXO *UTXOSet) *Tra
 	// 새로운 트랜잭션을 생성하고 ID를 설정
 	tx := Transaction{nil, inputs, outputs}
 
+	fmt.Println("transaction: ", tx)
+
 	tx.ID = tx.Hash()
 	UTXO.Blockchain.SignTransaction(&tx, w.PrivateKey)
 

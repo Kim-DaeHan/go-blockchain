@@ -3,6 +3,7 @@ package blockchain
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"log"
 
 	"github.com/dgraph-io/badger"
@@ -107,6 +108,8 @@ func (u UTXOSet) FindUnspentTransactions(pubKeyHash []byte) []TxOutput {
 				// 출력이 주어진 공개키 해시로 잠겨있다면
 				if out.IsLockedWithKey(pubKeyHash) {
 					// UTXO 목록에 추가
+					fmt.Println("UTXO: ", out)
+
 					UTXOs = append(UTXOs, out)
 				}
 			}
