@@ -3,6 +3,7 @@ package blockchain
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"log"
 
 	"github.com/dgraph-io/badger"
@@ -98,15 +99,18 @@ func (u UTXOSet) FindUTXO(pubKeyHash []byte) []TxOutput {
 			item := it.Item()
 			// 아이템의 값과 에러 가져옴
 			v, err := item.Value()
+			fmt.Println("item: ", item)
 			Handle(err)
 			// 값에서 출력을 역직렬화
 			outs := DeserializeOutputs(v)
 
 			// 출력 반복
 			for _, out := range outs.Outputs {
+				fmt.Println("UTXO: ", out)
 				// 출력이 주어진 공개키 해시로 잠겨있다면
 				if out.IsLockedWithKey(pubKeyHash) {
 					// UTXO 목록에 추가
+
 					UTXOs = append(UTXOs, out)
 				}
 			}
