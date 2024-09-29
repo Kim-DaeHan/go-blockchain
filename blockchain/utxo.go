@@ -201,7 +201,6 @@ func (u *UTXOSet) Update(block *Block) {
 			if !tx.IsCoinbase() {
 				// 각 입력에 대해 반복
 				for _, in := range tx.Inputs {
-					fmt.Printf("in: %x", in.ID)
 					// 업데이트된 출력을 저장할 구조체 생성
 					updatedOuts := TxOutputs{}
 					// 입력 ID에 utxoPrefix를 추가
@@ -219,6 +218,7 @@ func (u *UTXOSet) Update(block *Block) {
 					// 출력을 반복
 					for outIdx, out := range outs.Outputs {
 						// 현재 출력이 입력의 인덱스와 다르다면
+
 						if outIdx != in.Out {
 							// 업데이트된 출력 목록에 추가
 							updatedOuts.Outputs = append(updatedOuts.Outputs, out)
@@ -234,6 +234,9 @@ func (u *UTXOSet) Update(block *Block) {
 						// 그렇지 않다면
 					} else {
 						// 업데이트된 출력 목록을 데이터베이스에 설정
+						fmt.Printf("!!!!updatedOuts: %x\n", updatedOuts)
+						fmt.Printf("!!!!updatedOuts: %x\n", in.ID)
+
 						if err := txn.Set(inID, updatedOuts.Serialize()); err != nil {
 							log.Panic(err)
 						}
@@ -249,6 +252,8 @@ func (u *UTXOSet) Update(block *Block) {
 			// 트랜잭션 ID에 utxoPrefix를 추가
 			txID := append(utxoPrefix, tx.ID...)
 			// 트랜잭션 ID와 새로운 출력을 데이터베이스에 설정
+			fmt.Printf("!!!!newOutputs: %d\n", tx.Outputs)
+			fmt.Printf("!!!!newOutputs: %x\n", tx.ID)
 			if err := txn.Set(txID, newOutputs.Serialize()); err != nil {
 				log.Panic(err)
 			}
