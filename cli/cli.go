@@ -130,7 +130,7 @@ func (cli *CommandLine) createBlockChain(address, nodeId string) {
 
 	// 블록체인을 초기화하고 주소를 첫 블록의 수신자로 지정
 	chain := blockchain.InitBlockChain(address, nodeId)
-	chain.Database.Close()
+	defer chain.Database.Close()
 
 	// UTXOSet 객체 생성하고 블록체인 할당
 	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
