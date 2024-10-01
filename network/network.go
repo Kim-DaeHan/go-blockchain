@@ -150,7 +150,7 @@ func SendBlock(addr string, b *blockchain.Block) {
 func SendData(addr string, data []byte) {
 	// TCP 연결을 특정 주소로 설정
 	conn, err := net.Dial(protocol, addr)
-
+	fmt.Printf("SendData: %v: , %s", conn, addr)
 	if err != nil {
 		// 연결 실패 시 에러 메시지 출력
 		fmt.Printf("%s is not available\n", addr)
@@ -231,10 +231,13 @@ func SendTx(addr string, tnx *blockchain.Transaction) {
 func SendVersion(addr string, chain *blockchain.BlockChain) {
 	// 블록체인의 가장 높은 블록 높이 가져오기
 	bestHeight := chain.GetBestHeight()
+
 	// Version 구조체를 GOB 인코딩하여 바이트 배열로 변환
 	payload := GobEncode(Version{version, bestHeight, nodeAddress})
 	// "version" 명령어와 인코딩된 데이터를 결합하여 요청 생성
 	request := append(CmdToBytes("version"), payload...)
+
+	// fmt.Printf("req: %v", BytesToCmd(request))
 
 	// 특정 주소로 요청 데이터 전송
 	SendData(addr, request)
@@ -428,6 +431,15 @@ func HandleGetData(request []byte, chain *blockchain.BlockChain) {
 	}
 }
 
+// 트랜잭션을 메모리 풀에 추가하는 함수
+func AddTxToMemoryPool(tx *blockchain.Transaction) {
+	// 트랜잭션 ID를 문자열로 변환하여 메모리 풀에 추가
+	memoryPool[hex.EncodeToString(tx.ID)] = *tx
+
+	// 메모리 풀에 추가된 트랜잭션 정보 출력
+	fmt.Printf("Added transaction %s to memory pool\n", hex.EncodeToString(tx.ID))
+}
+
 // 트랜잭션 요청을 처리하는 함수
 func HandleTx(request []byte, chain *blockchain.BlockChain) {
 	var buff bytes.Buffer
@@ -576,6 +588,8 @@ func HandleVersion(request []byte, chain *blockchain.BlockChain) {
 
 // 연결을 처리하는 함수
 func HandleConnection(conn net.Conn, chain *blockchain.BlockChain) {
+	fmt.Println("start Connection")
+	fmt.Printf("conn: %x\n", conn)
 	// 연결로부터 모든 데이터를 읽어오기
 	req, err := ioutil.ReadAll(conn)
 	// 연결 종료
@@ -618,14 +632,17 @@ func HandleConnection(conn net.Conn, chain *blockchain.BlockChain) {
 func StartServer(nodeId, minerAddress string) {
 	// 노드 주소 설정
 	nodeAddress = fmt.Sprintf("localhost:%s", nodeId)
+
 	// 마이너 주소 설정
 	mineAddress = minerAddress
+
 	// TCP 연결 대기
 	ln, err := net.Listen(protocol, nodeAddress)
 	if err != nil {
 		// 에러 발생 시 패닉
 		log.Panic(err)
 	}
+
 	// 서버 종료
 	defer ln.Close()
 
@@ -638,7 +655,7 @@ func StartServer(nodeId, minerAddress string) {
 
 	// 현재 노드가 마스터 노드가 아닌 경우
 	if nodeAddress != KnownNodes[0] {
-		// 마스터 노드에 버전 정보 전송
+		// 	// 마스터 노드에 버전 정보 전송
 		SendVersion(KnownNodes[0], chain)
 	}
 	for {

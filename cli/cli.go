@@ -187,6 +187,7 @@ func (cli *CommandLine) send(from, to string, amount int, nodeId string, mineNow
 	defer chain.Database.Close()
 
 	wallets, err := wallet.CreateWallets(nodeId)
+
 	if err != nil {
 		log.Panic(err)
 	}
@@ -194,12 +195,14 @@ func (cli *CommandLine) send(from, to string, amount int, nodeId string, mineNow
 
 	// 새로운 트랜잭션을 생성
 	tx := blockchain.NewTransaction(&wallet, to, amount, &UTXOSet)
+
 	if mineNow {
 		cbTx := blockchain.CoinbaseTx(from, "")
 		txs := []*blockchain.Transaction{cbTx, tx}
 		block := chain.MineBlock(txs)
 		UTXOSet.Update(block)
 	} else {
+		network.AddTxToMemoryPool(tx)
 		network.SendTx(network.KnownNodes[0], tx)
 		fmt.Println("send tx")
 	}
