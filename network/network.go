@@ -231,6 +231,7 @@ func SendTx(addr string, tnx *blockchain.Transaction) {
 func SendVersion(addr string, chain *blockchain.BlockChain) {
 	// 블록체인의 가장 높은 블록 높이 가져오기
 	bestHeight := chain.GetBestHeight()
+	fmt.Println("bestHeight: ", bestHeight)
 
 	// Version 구조체를 GOB 인코딩하여 바이트 배열로 변환
 	payload := GobEncode(Version{version, bestHeight, nodeAddress})
