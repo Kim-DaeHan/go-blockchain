@@ -465,7 +465,7 @@ func HandleTx(request []byte, chain *blockchain.BlockChain) {
 	memoryPool[hex.EncodeToString(tx.ID)] = tx
 
 	// 노드 주소와 메모리 풀 크기 출력
-	fmt.Printf("%s, %d", nodeAddress, len(memoryPool))
+	fmt.Printf("aaaaaaaaaaaa: %s, %d\n", nodeAddress, len(memoryPool))
 
 	// 현재 노드가 마스터 노드인 경우
 	if nodeAddress == KnownNodes[0] {
@@ -478,7 +478,7 @@ func HandleTx(request []byte, chain *blockchain.BlockChain) {
 		// 현재 노드가 마스터 노드가 아닌 경우
 	} else {
 		// 메모리 풀에 트랜잭션이 2개 이상이고 마이너 주소가 설정된 경우
-		if len(memoryPool) >= 2 && len(mineAddress) > 0 {
+		if len(memoryPool) >= 1 && len(mineAddress) > 0 {
 			// 트랜잭션 채굴
 			MineTx(chain)
 		}
@@ -662,6 +662,7 @@ func StartServer(nodeId, minerAddress string) {
 	for {
 		// 연결 수락
 		conn, err := ln.Accept()
+		fmt.Println("memory: ", memoryPool)
 		if err != nil {
 			// 에러 발생 시 패닉
 			log.Panic(err)
