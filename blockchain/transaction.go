@@ -25,16 +25,20 @@ type Transaction struct {
 
 // 트랜잭션의 해시값 계산 함수
 func (tx *Transaction) Hash() []byte {
+	fmt.Println("Hash start")
 	// 해시 저장 변수
 	var hash [32]byte
 
 	// 트랜잭션의 복사본 생성
 	txCopy := *tx
+	fmt.Println("hash txCopy: ", txCopy)
 	// 트랜잭션의 ID 초기화
 	txCopy.ID = []byte{}
 
 	// 트랜잭션의 직렬화된 내용을 해시로 변환
 	hash = sha256.Sum256(txCopy.Serialize())
+
+	fmt.Printf("hash: %x\n", hash)
 
 	return hash[:]
 }
@@ -44,12 +48,16 @@ func (tx Transaction) Serialize() []byte {
 	// 바이트 슬라이스 저장 버퍼
 	var encoded bytes.Buffer
 
+	fmt.Println("Serialize in tx: ", tx)
+
 	// GOB 인코더 생성하여 버퍼에 트랜잭션을 인코딩
 	enc := gob.NewEncoder(&encoded)
 	err := enc.Encode(tx)
 	if err != nil {
 		log.Panic(err)
 	}
+	fmt.Println("encoded: ", encoded)
+	fmt.Printf("encoded123: %x\n", encoded.Bytes())
 
 	// 직렬화된 트랜잭션을 바이트 슬라이스로 반환
 	return encoded.Bytes()

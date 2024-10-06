@@ -194,9 +194,8 @@ func (cli *CommandLine) send(from, to string, amount int, nodeId string, mineNow
 	wallet := wallets.GetWallet(from)
 
 	// 새로운 트랜잭션을 생성
-	fmt.Println("txtxtx123")
+
 	tx := blockchain.NewTransaction(&wallet, to, amount, &UTXOSet)
-	fmt.Println("txtxtx456")
 
 	if mineNow {
 		cbTx := blockchain.CoinbaseTx(from, "")
