@@ -150,7 +150,7 @@ func SendBlock(addr string, b *blockchain.Block) {
 func SendData(addr string, data []byte) {
 	// TCP 연결을 특정 주소로 설정
 	conn, err := net.Dial(protocol, addr)
-	fmt.Printf("SendData: %v: , %s", conn, addr)
+	fmt.Printf("SendData: %v: , %s\n", conn, addr)
 	if err != nil {
 		// 연결 실패 시 에러 메시지 출력
 		fmt.Printf("%s is not available\n", addr)
@@ -360,6 +360,7 @@ func HandleInv(request []byte, chain *blockchain.BlockChain) {
 	if payload.Type == "tx" {
 		// 첫 번째 트랜잭션 ID를 가져옴
 		txID := payload.Items[0]
+		fmt.Printf("handle inv: %x\n", txID)
 
 		// 메모리 풀에 트랜잭션이 없는 경우
 		if memoryPool[hex.EncodeToString(txID)].ID == nil {
@@ -466,12 +467,15 @@ func HandleTx(request []byte, chain *blockchain.BlockChain) {
 
 	// 노드 주소와 메모리 풀 크기 출력
 	fmt.Printf("aaaaaaaaaaaa: %s, %d\n", nodeAddress, len(memoryPool))
+	fmt.Println("KnownNodes: ", KnownNodes)
 
 	// 현재 노드가 마스터 노드인 경우
 	if nodeAddress == KnownNodes[0] {
 		for _, node := range KnownNodes {
 			// 자신과 요청 보낸 노드를 제외한 노드에 전송
 			if node != nodeAddress && node != payload.AddrFrom {
+				fmt.Println("node: ", node)
+				fmt.Printf("inv: %x\n", tx.ID)
 				SendInv(node, "tx", [][]byte{tx.ID})
 			}
 		}
@@ -492,7 +496,7 @@ func MineTx(chain *blockchain.BlockChain) {
 	// 메모리 풀에 있는 모든 트랜잭션에 대해
 	for id := range memoryPool {
 		// 트랜잭션 ID 출력
-		fmt.Printf("tx: %s\n", memoryPool[id].ID)
+		fmt.Printf("txID: %x\n", memoryPool[id].ID)
 		// 트랜잭션 가져오기
 		tx := memoryPool[id]
 		// 트랜잭션 검증
@@ -662,7 +666,7 @@ func StartServer(nodeId, minerAddress string) {
 	for {
 		// 연결 수락
 		conn, err := ln.Accept()
-		fmt.Println("memory: ", memoryPool)
+		fmt.Println("memory123 KnownNodes: ", KnownNodes)
 		if err != nil {
 			// 에러 발생 시 패닉
 			log.Panic(err)

@@ -138,7 +138,6 @@ func NewTransaction(w *wallet.Wallet, to string, amount int, UTXO *UTXOSet) *Tra
 
 	tx.ID = tx.Hash()
 
-	fmt.Println("transaction: ", tx)
 	UTXO.Blockchain.SignTransaction(&tx, w.PrivateKey)
 
 	return &tx
@@ -208,40 +207,53 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 	txCopy := tx.TrimmedCopy()
 	// 타원 곡선(p256) 생성
 	curve := elliptic.P256()
-
+	fmt.Println("tx111: ", tx)
+	fmt.Println("txCopy1111: ", txCopy)
 	// 트랜잭션의 각 입력값에 대해 서명을 확인
 	for inId, in := range tx.Inputs {
+		fmt.Printf("in: %x\n", in)
 		// 이전 트랜잭션 가져옴
 		prevTx := prevTXs[hex.EncodeToString(in.ID)]
 		// 서명 및 공개키를 초기화
 		txCopy.Inputs[inId].Signature = nil
 		txCopy.Inputs[inId].PubKey = prevTx.Outputs[in.Out].PubKeyHash
 		// 트랜잭션의 ID를 업데이트
+		fmt.Println("txCopyHash: ", txCopy)
 		txCopy.ID = txCopy.Hash()
 		txCopy.Inputs[inId].PubKey = nil
+		fmt.Println("txCopy222: ", txCopy)
 
 		// 서명과 공개키 추출
 		r := big.Int{}
 		s := big.Int{}
 
+		fmt.Println("r s", r, s)
+		fmt.Printf("in.Sig: %x\n", in.Signature)
 		sigLen := len(in.Signature)
 		r.SetBytes(in.Signature[:(sigLen / 2)])
 		s.SetBytes(in.Signature[(sigLen / 2):])
 
 		x := big.Int{}
 		y := big.Int{}
+		fmt.Println("x y", x, y)
+		fmt.Printf("in.Pub: %x\n", in.PubKey)
 		keyLen := len(in.PubKey)
 		x.SetBytes(in.PubKey[:(keyLen / 2)])
 		y.SetBytes(in.PubKey[(keyLen / 2):])
 
 		// 타원 곡선 공개키 생성
 		rawPubKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
+		fmt.Println("rawPubKey: ", rawPubKey)
+		fmt.Println("txCopy.ID: ", txCopy.ID)
+		fmt.Println("r: ", r)
+		fmt.Println("s: ", s)
 		// 서명의 유효성 검증
 		if !ecdsa.Verify(&rawPubKey, txCopy.ID, &r, &s) {
+			fmt.Println("false")
 			return false
 		}
 	}
-
+	fmt.Println("true")
 	// 모든 입력값의 서명이 유효하면 true 반환
 	return true
 }

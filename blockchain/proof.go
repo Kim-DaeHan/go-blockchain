@@ -68,7 +68,7 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 		// 데이터 해싱
 		hash = sha256.Sum256(data)
 
-		fmt.Printf("\r%x", hash)
+		// fmt.Printf("\r%x", hash)
 		// 해시값을 big.Int로 변환하여 intHash에 저장
 		intHash.SetBytes(hash[:])
 
