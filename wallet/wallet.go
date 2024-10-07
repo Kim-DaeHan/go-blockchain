@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"log"
+	"math/big"
 
 	"golang.org/x/crypto/ripemd160"
 )
@@ -20,8 +21,31 @@ const (
 
 // 지갑 구조체
 type Wallet struct {
-	PrivateKey ecdsa.PrivateKey
+	PrivateKey []byte
 	PublicKey  []byte
+}
+
+// 개인 키를 복원하는 함수
+func (w Wallet) DeserializePrivateKey(data []byte) *ecdsa.PrivateKey {
+	curve := elliptic.P256()
+
+	// 데이터에서 공개 키(X, Y) 추출
+	x, y := elliptic.Unmarshal(curve, data[:len(data)-32]) // 마지막 32바이트는 D값
+	if x == nil || y == nil {
+		log.Panic("Invalid public key")
+	}
+
+	// D 값 추출
+	d := new(big.Int).SetBytes(data[len(data)-32:])
+
+	return &ecdsa.PrivateKey{
+		PublicKey: ecdsa.PublicKey{
+			Curve: curve,
+			X:     x,
+			Y:     y,
+		},
+		D: d,
+	}
 }
 
 // 지갑 주소를 생성하는 메서드
@@ -59,12 +83,22 @@ func NewKeyPair() (ecdsa.PrivateKey, []byte) {
 	return *private, pub
 }
 
-// 지값을 생성하는 함수
+// 지갑을 생성하는 함수
 func MakeWallet() *Wallet {
 	// 새로운 키 쌍을 생성
 	private, public := NewKeyPair()
+
+	// 개인키를 바이트 배열로 변환하여 저장
+	privateBytes := elliptic.Marshal(private.PublicKey.Curve, private.X, private.Y)
+
+	// D 값을 바이트 배열로 변환하여 저장
+	dBytes := private.D.Bytes()
+
+	// 개인 키 바이트 배열을 결합하여 저장 (예: [X, Y, D])
+	walletBytes := append(privateBytes, dBytes...)
+
 	// 지갑을 생성하고 초기화
-	wallet := Wallet{private, public}
+	wallet := Wallet{PrivateKey: walletBytes, PublicKey: public}
 
 	return &wallet
 }

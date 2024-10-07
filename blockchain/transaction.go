@@ -24,20 +24,17 @@ type Transaction struct {
 
 // 트랜잭션의 해시값 계산 함수
 func (tx *Transaction) Hash() []byte {
-	fmt.Println("Hash start")
 	// 해시 저장 변수
 	var hash [32]byte
 
 	// 트랜잭션의 복사본 생성
 	txCopy := *tx
-	fmt.Println("hash txCopy: ", txCopy)
+
 	// 트랜잭션의 ID 초기화
 	txCopy.ID = []byte{}
 
 	// 트랜잭션의 직렬화된 내용을 해시로 변환
 	hash = sha256.Sum256(txCopy.Serialize())
-
-	fmt.Printf("hash: %x\n", hash)
 
 	return hash[:]
 }
@@ -135,7 +132,9 @@ func NewTransaction(w *wallet.Wallet, to string, amount int, UTXO *UTXOSet) *Tra
 
 	tx.ID = tx.Hash()
 
-	UTXO.Blockchain.SignTransaction(&tx, w.PrivateKey)
+	privateKey := w.DeserializePrivateKey(w.PrivateKey)
+
+	UTXO.Blockchain.SignTransaction(&tx, privateKey)
 
 	return &tx
 }
@@ -146,7 +145,7 @@ func (tx *Transaction) IsCoinbase() bool {
 }
 
 // 트랜잭션 서명 함수
-func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transaction) {
+func (tx *Transaction) Sign(privKey *ecdsa.PrivateKey, prevTXs map[string]Transaction) {
 	// 코인베이스 트랜잭션이면 함수 종료
 	if tx.IsCoinbase() {
 		return
@@ -175,7 +174,7 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 		txCopy.Inputs[inId].PubKey = nil
 
 		// 개인 키를 사용하여 서명 생성
-		r, s, err := ecdsa.Sign(rand.Reader, &privKey, txCopy.ID)
+		r, s, err := ecdsa.Sign(rand.Reader, privKey, txCopy.ID)
 		Handle(err)
 		signature := append(r.Bytes(), s.Bytes()...)
 
@@ -204,46 +203,37 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 	txCopy := tx.TrimmedCopy()
 	// 타원 곡선(p256) 생성
 	curve := elliptic.P256()
-	fmt.Println("tx111: ", tx)
-	fmt.Println("txCopy1111: ", txCopy)
+
 	// 트랜잭션의 각 입력값에 대해 서명을 확인
 	for inId, in := range tx.Inputs {
-		fmt.Printf("in: %x\n", in)
+
 		// 이전 트랜잭션 가져옴
 		prevTx := prevTXs[hex.EncodeToString(in.ID)]
 		// 서명 및 공개키를 초기화
 		txCopy.Inputs[inId].Signature = nil
 		txCopy.Inputs[inId].PubKey = prevTx.Outputs[in.Out].PubKeyHash
 		// 트랜잭션의 ID를 업데이트
-		fmt.Println("txCopyHash: ", txCopy)
 		txCopy.ID = txCopy.Hash()
 		txCopy.Inputs[inId].PubKey = nil
-		fmt.Println("txCopy222: ", txCopy)
 
 		// 서명과 공개키 추출
 		r := big.Int{}
 		s := big.Int{}
 
-		fmt.Println("r s", r, s)
-		fmt.Printf("in.Sig: %x\n", in.Signature)
 		sigLen := len(in.Signature)
 		r.SetBytes(in.Signature[:(sigLen / 2)])
 		s.SetBytes(in.Signature[(sigLen / 2):])
 
 		x := big.Int{}
 		y := big.Int{}
-		fmt.Println("x y", x, y)
-		fmt.Printf("in.Pub: %x\n", in.PubKey)
+
 		keyLen := len(in.PubKey)
 		x.SetBytes(in.PubKey[:(keyLen / 2)])
 		y.SetBytes(in.PubKey[(keyLen / 2):])
 
 		// 타원 곡선 공개키 생성
 		rawPubKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
-		fmt.Println("rawPubKey: ", rawPubKey)
-		fmt.Println("txCopy.ID: ", txCopy.ID)
-		fmt.Println("r: ", r)
-		fmt.Println("s: ", s)
+
 		// 서명의 유효성 검증
 		if !ecdsa.Verify(&rawPubKey, txCopy.ID, &r, &s) {
 			fmt.Println("false")

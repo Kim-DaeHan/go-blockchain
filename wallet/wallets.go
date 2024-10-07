@@ -35,7 +35,6 @@ func (ws *Wallets) AddWallet() string {
 	wallet := MakeWallet()
 	// 지갑 주소를 문자열로 변환
 	address := string(wallet.Address())
-	// fmt.Println(address)
 
 	// Wallets 구조체에 지갑 추가
 	ws.Wallets[address] = wallet

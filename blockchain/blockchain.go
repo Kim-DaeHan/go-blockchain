@@ -384,7 +384,7 @@ func (bc *BlockChain) FindTransaction(ID []byte) (Transaction, error) {
 }
 
 // 트랜잭션 서명함수
-func (bc *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
+func (bc *BlockChain) SignTransaction(tx *Transaction, privKey *ecdsa.PrivateKey) {
 	// 이전 트랜잭션을 저장할 맵 생성
 	prevTXs := make(map[string]Transaction)
 

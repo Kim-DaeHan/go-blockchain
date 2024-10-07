@@ -88,7 +88,6 @@ func (cli *CommandLine) createWallet(nodeId string) {
 
 	// 새로 생성된 지갑 정보 파일에 저장
 	wallets.SaveFile(nodeId)
-	fmt.Println("start444444")
 
 	fmt.Printf("New address is: %s\n", address)
 }
@@ -206,7 +205,6 @@ func (cli *CommandLine) send(from, to string, amount int, nodeId string, mineNow
 		block := chain.MineBlock(txs)
 		UTXOSet.Update(block)
 	} else {
-		// network.AddTxToMemoryPool(tx)
 		network.SendTx(network.KnownNodes[0], tx)
 		fmt.Println("send tx")
 	}

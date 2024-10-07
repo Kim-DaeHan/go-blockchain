@@ -433,15 +433,6 @@ func HandleGetData(request []byte, chain *blockchain.BlockChain) {
 	}
 }
 
-// 트랜잭션을 메모리 풀에 추가하는 함수
-func AddTxToMemoryPool(tx *blockchain.Transaction) {
-	// 트랜잭션 ID를 문자열로 변환하여 메모리 풀에 추가
-	memoryPool[hex.EncodeToString(tx.ID)] = *tx
-
-	// 메모리 풀에 추가된 트랜잭션 정보 출력
-	fmt.Printf("Added transaction %s to memory pool\n", hex.EncodeToString(tx.ID))
-}
-
 // 트랜잭션 요청을 처리하는 함수
 func HandleTx(request []byte, chain *blockchain.BlockChain) {
 	var buff bytes.Buffer
@@ -466,16 +457,14 @@ func HandleTx(request []byte, chain *blockchain.BlockChain) {
 	memoryPool[hex.EncodeToString(tx.ID)] = tx
 
 	// 노드 주소와 메모리 풀 크기 출력
-	fmt.Printf("aaaaaaaaaaaa: %s, %d\n", nodeAddress, len(memoryPool))
-	fmt.Println("KnownNodes: ", KnownNodes)
+	fmt.Println("KnownNodes in HandleTx: ", KnownNodes)
 
 	// 현재 노드가 마스터 노드인 경우
 	if nodeAddress == KnownNodes[0] {
 		for _, node := range KnownNodes {
 			// 자신과 요청 보낸 노드를 제외한 노드에 전송
 			if node != nodeAddress && node != payload.AddrFrom {
-				fmt.Println("node: ", node)
-				fmt.Printf("inv: %x\n", tx.ID)
+				fmt.Println("node in HandleTx: ", node)
 				SendInv(node, "tx", [][]byte{tx.ID})
 			}
 		}
@@ -593,8 +582,6 @@ func HandleVersion(request []byte, chain *blockchain.BlockChain) {
 
 // 연결을 처리하는 함수
 func HandleConnection(conn net.Conn, chain *blockchain.BlockChain) {
-	fmt.Println("start Connection")
-	fmt.Printf("conn: %x\n", conn)
 	// 연결로부터 모든 데이터를 읽어오기
 	req, err := ioutil.ReadAll(conn)
 	// 연결 종료
@@ -666,7 +653,6 @@ func StartServer(nodeId, minerAddress string) {
 	for {
 		// 연결 수락
 		conn, err := ln.Accept()
-		fmt.Println("memory123 KnownNodes: ", KnownNodes)
 		if err != nil {
 			// 에러 발생 시 패닉
 			log.Panic(err)
