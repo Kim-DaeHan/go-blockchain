@@ -1,8 +1,7 @@
 package blockchain
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"log"
 	"time"
 )
@@ -54,32 +53,28 @@ func Genesis(coinbase *Transaction) *Block {
 
 // 블록구조 직렬화
 func (b *Block) Serialize() []byte {
-	// 바이트 슬라이스를 저장할 버퍼 역할 변수 res
-	var res bytes.Buffer
+	// Block 구조체를 JSON으로 직렬화
+	data, err := json.Marshal(b)
 
-	// res에 데이터를 인코딩하기 위한 새로운 Gob 인코더를 생성
-	encoder := gob.NewEncoder(&res)
+	// 직렬화 중 에러가 발생하면 패닉
+	if err != nil {
+		log.Panic(err)
+	}
 
-	// 인코더를 사용하여 Block 구조체를 시리얼라이즈하고 결과를 res에 저장
-	err := encoder.Encode(b)
-
-	// 시리얼 라이즈 과정 에러 발생하면 프로그램 패닉 상태
-	Handle(err)
-
-	return res.Bytes()
+	return data
 }
 
 // 바이트 슬라이스를 사용하여 Block 구조체 복원
 func Deserialize(data []byte) *Block {
 	var block Block
 
-	// 주어진 바이트 슬라이스를 읽기 위한 새로운 Gob 디코더 생성
-	decoder := gob.NewDecoder(bytes.NewReader(data))
+	// JSON 바이트 슬라이스를 Block 구조체로 변환
+	err := json.Unmarshal(data, &block)
 
-	// 디코더 사용하여 바이트 슬라이스에서 데이터를 읽고 복원된 Block 구조체를 저장
-	err := decoder.Decode(&block)
-
-	Handle(err)
+	// 역직렬화 중 에러가 발생하면 패닉
+	if err != nil {
+		log.Panic(err)
+	}
 
 	return &block
 }

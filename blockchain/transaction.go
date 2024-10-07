@@ -1,13 +1,12 @@
 package blockchain
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/gob"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
@@ -45,22 +44,11 @@ func (tx *Transaction) Hash() []byte {
 
 // 트랜잭션을 바이스 슬라이스로 직렬화 함수
 func (tx Transaction) Serialize() []byte {
-	// 바이트 슬라이스 저장 버퍼
-	var encoded bytes.Buffer
-
-	fmt.Println("Serialize in tx: ", tx)
-
-	// GOB 인코더 생성하여 버퍼에 트랜잭션을 인코딩
-	enc := gob.NewEncoder(&encoded)
-	err := enc.Encode(tx)
+	data, err := json.Marshal(tx)
 	if err != nil {
 		log.Panic(err)
 	}
-	fmt.Println("encoded: ", encoded)
-	fmt.Printf("encoded123: %x\n", encoded.Bytes())
-
-	// 직렬화된 트랜잭션을 바이트 슬라이스로 반환
-	return encoded.Bytes()
+	return data
 }
 
 // 주어진 바이트 배열을 디코딩 하여 Transaction 구조체로 변환하는 함수
@@ -68,11 +56,12 @@ func DeserializeTransaction(data []byte) Transaction {
 	// 디코딩한 결과를 저장할 Transaction 구조체 선언
 	var transaction Transaction
 
-	// 바이트 배열을 읽기 위해 bytes.Reader를 생성하고, gob 디코더 생성
-	decoder := gob.NewDecoder(bytes.NewReader(data))
-	// 바이트 배열을 Transaction 구조체로 디코딩
-	err := decoder.Decode(&transaction)
-	Handle(err)
+	// JSON 데이터를 Transaction 구조체로 디코딩
+	err := json.Unmarshal(data, &transaction)
+	if err != nil {
+		log.Panic(err)
+	}
+
 	return transaction
 }
 
