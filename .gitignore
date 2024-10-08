@@ -1,2 +1,5 @@
-tmp/
+# tmp 폴더 내 모든 파일과 하위 디렉토리 무시
+tmp/*
+# .gitkeep 파일은 제외
+!tmp/.gitkeep
 .DS_Store
