@@ -45,9 +45,8 @@ func ContinueBlockChain(nodeId string) *BlockChain {
 	var lastHash []byte
 
 	// Badger 데이터베이스의 옵션 설정
-	opts := badger.DefaultOptions
-	opts.Dir = path
-	opts.ValueDir = path
+	// opts.Dir와 opts.ValueDir은 최신 버전에서 제거됨.
+	opts := badger.DefaultOptions(path)
 
 	// 데이터베이스 오픈
 	db, err := openDB(path, opts)
@@ -59,7 +58,7 @@ func ContinueBlockChain(nodeId string) *BlockChain {
 		Handle(err)
 
 		// 마지막 블록의 해시 값 조회
-		lastHash, err = item.Value()
+		lastHash, err = item.ValueCopy(nil)
 
 		return err
 	})
@@ -76,12 +75,11 @@ func InitBlockChain(address, nodeId string) *BlockChain {
 		fmt.Println("Blockchain already exists")
 		runtime.Goexit()
 	}
+
 	var lastHash []byte
 
-	// Badger 데이터베이스의 옵션 설정
-	opts := badger.DefaultOptions
-	opts.Dir = path
-	opts.ValueDir = path
+	// Badger 데이터베이스의 옵션 설정 (최신 버전)
+	opts := badger.DefaultOptions(path)
 
 	// 데이터베이스 오픈
 	db, err := openDB(path, opts)
@@ -92,15 +90,16 @@ func InitBlockChain(address, nodeId string) *BlockChain {
 		cbtx := CoinbaseTx(address, genesisData)
 		genesis := Genesis(cbtx)
 		fmt.Println("Genesis created")
+		// Genesis 블록 저장
 		err = txn.Set(genesis.Hash, genesis.Serialize())
 		Handle(err)
+		// 마지막 블록 해시 저장
 		err = txn.Set([]byte("lh"), genesis.Hash)
 
 		lastHash = genesis.Hash
 
 		return err
 	})
-
 	Handle(err)
 
 	blockchain := BlockChain{lastHash, db}
@@ -127,13 +126,13 @@ func (chain *BlockChain) AddBlock(block *Block) {
 		item, err := txn.Get([]byte("lh"))
 		Handle(err)
 		// 마지막 블록 해시 가져옴
-		lastHash, _ := item.Value()
+		lastHash, _ := item.ValueCopy(nil)
 
 		// 마지막 블록 해시를 이용해 마지막 블록 데이터를 가져옴
 		item, err = txn.Get(lastHash)
 		Handle(err)
 		// 마지막 블록 데이터를 가져옴
-		lastBlockData, _ := item.Value()
+		lastBlockData, _ := item.ValueCopy(nil)
 
 		// 마지막 블록 데이터를 역직렬화하여 블록 구조체로 변환
 		lastBlock := Deserialize(lastBlockData)
@@ -164,13 +163,13 @@ func (chain *BlockChain) GetBestHeight() int {
 		item, err := txn.Get([]byte("lh"))
 		Handle(err)
 		// 마지막 블록 해시를 가져옴
-		lastHash, _ := item.Value()
+		lastHash, _ := item.ValueCopy(nil)
 
 		// 마지막 블록 해시를 이용해 마지막 블록 데이터를 가져옴
 		item, err = txn.Get(lastHash)
 		Handle(err)
 		// 마지막 블록 데이터를 가져옴
-		lastBlockData, _ := item.Value()
+		lastBlockData, _ := item.ValueCopy(nil)
 
 		// 마지막 블록 데이터를 역직렬화하여 블록 구조체로 변환하고 저장
 		lastBlock = *Deserialize(lastBlockData)
@@ -196,7 +195,7 @@ func (chain *BlockChain) GetBlock(blockHash []byte) (Block, error) {
 			return errors.New("Block is not found")
 		} else {
 			// 블록 데이터 가져옴
-			blockData, _ := item.Value()
+			blockData, _ := item.ValueCopy(nil)
 
 			// 블록 데이터를 역직렬화하여 블록 구조체로 변환하고 저장
 			block = *Deserialize(blockData)
@@ -258,13 +257,13 @@ func (chain *BlockChain) MineBlock(transactions []*Transaction) *Block {
 		item, err := txn.Get([]byte("lh"))
 		Handle(err)
 		// 마지막 블록의 해시 값을 저장
-		lastHash, _ = item.Value()
+		lastHash, _ = item.ValueCopy(nil)
 
 		// 마지막 블록의 해시를 통해 마지막 블록의 데이터를 가져옴
 		item, err = txn.Get(lastHash)
 		Handle(err)
 		// 마지막 블록 데이터 가져옴
-		lastBlockData, _ := item.Value()
+		lastBlockData, _ := item.ValueCopy(nil)
 
 		// 마지막 블록을 역직렬화
 		lastBlock := Deserialize(lastBlockData)
@@ -447,6 +446,8 @@ func retry(dir string, originalOpts badger.Options) (*badger.DB, error) {
 
 // 주어진 옵셥으로 데이터베이스 열려고 시도하는 함수
 func openDB(dir string, opts badger.Options) (*badger.DB, error) {
+	opts.Logger = nil // 로그 비활성화
+
 	// Badger 데이터베이스를 열려고 시도
 	if db, err := badger.Open(opts); err != nil {
 		// 데이터베이스 열기에 실패한 경우

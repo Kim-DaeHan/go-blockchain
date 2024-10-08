@@ -46,7 +46,7 @@ func (u UTXOSet) FindSpendableOutputs(pubKeyHash []byte, amount int) (int, map[s
 			// 아이템의 키를 가져옴
 			k := item.Key()
 			// 아이템의 값과 에러를 가져옴
-			v, err := item.Value()
+			v, err := item.ValueCopy(nil)
 			Handle(err)
 			// utxoPrefix를 제거
 			k = bytes.TrimPrefix(k, utxoPrefix)
@@ -97,7 +97,7 @@ func (u UTXOSet) FindUnspentTransactions(pubKeyHash []byte) []TxOutput {
 			// Iterator의 현재 아이템
 			item := it.Item()
 			// 아이템의 값과 에러 가져옴
-			v, err := item.Value()
+			v, err := item.ValueCopy(nil)
 			Handle(err)
 			// 값에서 출력을 역직렬화
 			outs := DeserializeOutputs(v)
@@ -205,7 +205,7 @@ func (u *UTXOSet) Update(block *Block) {
 					item, err := txn.Get(inID)
 					Handle(err)
 					// 값을 가져옴
-					v, err := item.Value()
+					v, err := item.ValueCopy(nil)
 					Handle(err)
 
 					// 값에서 출력을 역직렬화

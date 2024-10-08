@@ -25,7 +25,7 @@ func (iter *BlockChainIterator) Next() *Block {
 		item, err := txn.Get(iter.CurrentHash)
 		Handle(err)
 		// 가져온 아이템의 값(직렬화된 블록)을 디코딩하여 블록 객체로 변환
-		encodedBlock, err := item.Value()
+		encodedBlock, err := item.ValueCopy(nil)
 		block = Deserialize(encodedBlock)
 
 		return err
