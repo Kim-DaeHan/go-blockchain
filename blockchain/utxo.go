@@ -12,7 +12,7 @@ var (
 	// UTXO 키의 접두사
 	utxoPrefix = []byte("utxo-")
 	// utxoPrefix의 길이
-	prefixLength = len(utxoPrefix)
+	// prefixLength = len(utxoPrefix)
 )
 
 // 블록체인에서 사용하는 UTXO 집합
