@@ -17,7 +17,7 @@ import (
 
 const (
 	dbPath      = "./tmp/blocks_%s"
-	genesisData = "First Transaction from Genesis"
+	genesisData = "First Transaction from Genesis."
 )
 
 type BlockChain struct {
