@@ -56,7 +56,7 @@ func NewMerkleTree(data [][]byte) *MerkleTree {
 		data = append(data, data[len(data)-1])
 	}
 
-	// 모든 데이터 조각에 대해
+	// 모든 데이터 조각에 대해.
 	for _, dat := range data {
 		// 리프 노드 생성
 		node := NewMerkleNode(nil, nil, dat)
