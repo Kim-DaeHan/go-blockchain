@@ -45,7 +45,7 @@ func NewMerkleNode(left, right *MerkleNode, data []byte) *MerkleNode {
 	return &node
 }
 
-// 주어진 데이터 조각들로부터 Merkle 트리를 생성
+// 주어진 데이터 조각들로부터 Merkle 트리를 생성.
 func NewMerkleTree(data [][]byte) *MerkleTree {
 	// 초기 노드 리스트
 	var nodes []MerkleNode
