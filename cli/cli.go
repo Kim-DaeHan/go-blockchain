@@ -18,7 +18,7 @@ type CommandLine struct{}
 
 // 명령어 사용법 출력
 func (cli *CommandLine) printUsage() {
-	fmt.Println("Usage:111")
+	fmt.Println("Usage:")
 	fmt.Println(" getbalance -address ADDRESS - get the balance for an address")
 	fmt.Println(" createblockchain -address ADDRESS creates a blockchain and sends genesis reward to address")
 	fmt.Println(" printchain - Prints the blocks in the chain")
