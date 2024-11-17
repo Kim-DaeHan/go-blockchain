@@ -43,7 +43,7 @@ func main() {
 // 	ctx, cancel := context.WithCancel(context.Background())
 // 	defer cancel()
 
-// 	go mining(ctx)
+// 	go mining(ctx).
 
 // 	for msg := range ch {
 // 		fmt.Println(msg)
