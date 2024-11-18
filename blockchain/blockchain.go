@@ -57,7 +57,7 @@ func ContinueBlockChain(nodeId string) *BlockChain {
 		item, err := txn.Get([]byte("lh"))
 		Handle(err)
 
-		// 마지막 블록의 해시 값 조회
+		// 마지막 블록의 해시 값 조회.
 		lastHash, err = item.ValueCopy(nil)
 
 		return err
