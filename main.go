@@ -19,7 +19,7 @@ func main() {
 }
 
 // var a int = 42
-// var b *int = &a  // &는 'a'의 메모리 주소를 가져옴.
+// var b *int = &a  // &는 'a'의 메모리 주소를 가져옴
 
 // fmt.Println("a의 값:", a)       // 42 출력
 // fmt.Println("a의 주소:", &a)    // a의 메모리 주소 출력
