@@ -53,7 +53,7 @@ func main() {
 // 		// 컨텍스트 재생성으로 mining 재시작
 // 		ctx, cancel = context.WithCancel(context.Background())
 // 		go mining(ctx)
-// 	}d
+// 	}
 // }
 
 func mining(ctx context.Context) {
