@@ -74,7 +74,7 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 
 		// 계산된 해시값이 목표값보다 작은지 확인(Cmp 함수로 big.Int 타입 비교수행 => intHash가 pow.Target보다 작은지 확인)
 		if intHash.Cmp(pow.Target) == -1 {
-			// 목표값보다 작으면 유효한 해시값을 찾은 것이므로 반복 중단
+			// 목표값보다 작으면 유효한 해시값을 찾은 것이므로 반복 중단.
 			break
 		} else {
 			// 그렇지 않으면 nonce 증가
