@@ -63,7 +63,7 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 	// nonce가 최댓값보다 작은 동안 반복
 	for nonce < math.MaxInt64 {
 
-		// 현재 nonce 값 기반으로 데이터 초기화
+		// 현재 nonce 값 기반으로 데이터 초기화.
 		data := pow.InitData(nonce)
 		// 데이터 해싱
 		hash = sha256.Sum256(data)
