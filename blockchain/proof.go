@@ -69,7 +69,7 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 		hash = sha256.Sum256(data)
 
 		// fmt.Printf("\r%x", hash)
-		// 해시값을 big.Int로 변환하여 intHash에 저장ㅠㅠ
+		// 해시값을 big.Int로 변환하여 intHash에 저장
 		intHash.SetBytes(hash[:])
 
 		// 계산된 해시값이 목표값보다 작은지 확인(Cmp 함수로 big.Int 타입 비교수행 => intHash가 pow.Target보다 작은지 확인)
